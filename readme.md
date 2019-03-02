@@ -22,7 +22,7 @@ dependencies {
 for redis:
 ```groovy
 dependencies {
-    compile "com.labijie:labijie-caching-redis-kotlin:1.0"
+    compile "com.labijie:labijie-caching-kotlin-redis:1.0"
 }
 ```
 
