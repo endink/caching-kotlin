@@ -34,17 +34,14 @@ use
 val memoryCache = MemoryCacheManager(MemoryCacheOptions());
 
 //sliding time expires
-memoryCache.set("2", Any(), 3000L, true);
+memoryCache.set("2", Any(), 3000L, TimePolicy.Sliding);
 
 //absolute time expires
-memoryCache.set("a", Any(), 1000L, false);
+memoryCache.set("a", Any(), 1000L, TimePolicy.Absolute);
 
 //get
 memoryCache.get("a")
 
 ```
 
-
-## Redis Quick Start
-coming soon ...
 

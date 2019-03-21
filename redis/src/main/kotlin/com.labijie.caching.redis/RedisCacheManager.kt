@@ -261,6 +261,10 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         timePolicy: TimePolicy,
         region: String?
     ) {
+        if (data::class.java == Any::class.java) {
+            logger.warn("Cache put operation is ignored because the class '${data::class.java.simpleName}' cannot be deserialized.")
+            return
+        }
         try {
             this.setCore(key, region, data, expireMills, timePolicy == TimePolicy.Sliding)
         }catch (ex:RedisException){
