@@ -250,19 +250,27 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         useSlidingExpiration: Boolean,
         region: String?
     ) {
-        this.setCore(key, region, data, timeoutMilliseconds, useSlidingExpiration)
+        try {
+            this.setCore(key, region, data, timeoutMilliseconds, useSlidingExpiration)
+        }catch (ex:RedisException){
+            logger.warn("Set cache data fault ( key: $key, region: $region ).", ex)
+        }
     }
 
     override fun remove(key: String, region: String?) {
         this.validateKey(key)
-        val client = this.getClient(region)
-        this.removeCore(client.connection, key, region)
+        try {
+            val client = this.getClient(region)
+            this.removeCore(client.connection, key, region)
+        }catch (ex:RedisException){
+            logger.warn("Remove cache data fault ( key: $key, region: $region ).")
+        }
     }
 
     override fun refresh(key: String, region: String?): Boolean {
         this.validateKey(key)
-        val client = this.getClient(region)
         try {
+            val client = this.getClient(region)
             this.getAndRefresh(client.connection, key, false)
             return true
         } catch (ex: RedisException) {
@@ -272,8 +280,8 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     }
 
     override fun clearRegion(region: String) {
-        val client = this.getClient(region)
         try {
+            val client = this.getClient(region)
             client.connection.sync().flushdb()
         } catch (ex: RedisException) {
             logger.warn("Clear cache region '$region' fault .", ex)
