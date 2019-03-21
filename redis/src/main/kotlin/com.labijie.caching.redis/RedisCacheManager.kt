@@ -206,25 +206,28 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    override fun get(key: String, region: String?): Any? {
+    private fun <T : Any> getCore(key: String, valueType: KClass<T>?, region: String?): T? {
         this.validateKey(key)
         val client = this.getClient(region)
         try {
             val cacheHashData = this.getAndRefresh(client.connection, key, true)
             if (cacheHashData != null) {
                 //考虑程序变更后类型可能已经不存在或更名。
-                val clazz: KClass<*>?
-                try {
-                    clazz = Class.forName(cacheHashData.type).kotlin
-                } catch (cne: ClassNotFoundException) {
-                    this.remove(key, region)
-                    logger.warn("The specified type '${cacheHashData.type}' could not be found to deserialize the cached data, and the cache with key '$key' has been removed ( region: $region ).")
-                    return null
+                var clazz: KClass<*>? = valueType
+                if(clazz == null) {
+                    try {
+                        clazz = Class.forName(cacheHashData.type).kotlin
+                    } catch (cne: ClassNotFoundException) {
+                        this.remove(key, region)
+                        logger.warn("The specified type '${cacheHashData.type}' could not be found to deserialize the cached data, and the cache with key '$key' has been removed ( region: $region ).")
+                        return null
+                    }
                 }
 
                 //考虑数据结构更新后缓存反序列化的问题。
                 return try {
-                    this.deserializeData(cacheHashData.serializer, clazz, cacheHashData.data)
+                    @Suppress("UNCHECKED_CAST")
+                    this.deserializeData(cacheHashData.serializer, clazz, cacheHashData.data) as? T
                 } catch (ex: Throwable) {
                     logger.warn("The specified type '${cacheHashData.type}' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
 
@@ -241,6 +244,14 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
 
         return null
+    }
+
+    override fun <T : Any> get(key: String, valueType: KClass<T>, region: String?): T? {
+        return this.getCore(key, valueType, region)
+    }
+
+    override fun get(key: String, region: String?): Any? {
+        return this.getCore(key, null, region)
     }
 
     override fun set(
