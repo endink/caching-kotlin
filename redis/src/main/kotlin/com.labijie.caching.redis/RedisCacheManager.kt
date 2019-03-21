@@ -29,7 +29,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     // ARGV[5] = serializer - type string
     // this order should not change LUA script depends on it
     private val SET_SCRIPT = "local result = 1 " + NEW_LINE +
-            "redis.call('HMSET', KEYS[1], 'absexp', ARGV[1], 'sldexp', ARGV[2], 'data', ARGV[3], 'type', ARGV[4], 'ser', ARGV[5]) " + NEW_LINE +
+            "redis.call('HMSET', KEYS[1], 'absexp', ARGV[1], 'sldexp', ARGV[2], 'data', ARGV[4], 'type', ARGV[5], 'ser', ARGV[6]) " + NEW_LINE +
             "if ARGV[3] ~= '-1' then" + NEW_LINE +
             "result = redis.call('EXPIRE', KEYS[1], ARGV[3]) " + NEW_LINE +
             " end " + NEW_LINE +
@@ -39,7 +39,6 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     private val SLIDING_EXPIRATION_KEY = "sldexp"
     private val DATA_KEY = "data"
     private val TYPE_KEY = "type"
-    private val COMPRESS_KEY = "compress"
     private val SERIALIZER_KEY = "ser"
     private val NOT_PRESENT: Long = -1
 
@@ -49,33 +48,35 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
 
-    private fun getClient(region: String? = null): RedisClientInternal {
+    fun getClient(region: String? = null): RedisClientInternal {
+        if(region == "--"){
+            throw RedisCacheException("Cache region name must not be '--'.")
+        }
         if (redisConfig.regions.isEmpty()) {
             throw RedisCacheException("At least one redis cache region to be configured")
         }
-        var config: RedisRegionOptions = RedisRegionOptions()
-        config = if (region.isNullOrBlank()) {
+        val config = if (region.isNullOrBlank()) {
             redisConfig.regions.values.first()
         } else {
             redisConfig.regions.getOrDefault(region, null)
                 ?: throw RedisCacheException("Cant found redis cache region '$region' that be configured")
         }
-
-        var client: RedisClientInternal? = null
-        val c = this.clients.getOrPut(region) {
+        val r = if(region.isNullOrBlank()) "--" else region
+        val client: RedisClientInternal? = null
+        val c = this.clients.getOrPut(r) {
             val c = RedisClient.create(config.uri)
             val connection = c.connect()
 
-            RedisClientInternal(connection, c, config.serializer)
+            RedisClientInternal(connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
-            client!!.client.shutdown()
+            client.client.shutdown()
         }
         return c
     }
 
     private fun List<KeyValue<String, String>>.toMap(): Map<String, String> {
-        return this.map {
+        return this.filter { it.hasValue() }.map {
             it.key to it.value
         }.toMap()
     }
@@ -110,7 +111,6 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
                 SLIDING_EXPIRATION_KEY,
                 DATA_KEY,
                 TYPE_KEY,
-                COMPRESS_KEY,
                 SERIALIZER_KEY
             ).toMap()
         } else {
@@ -161,7 +161,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         }
     }
 
-    fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region:String?) {
+    protected fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region:String?) {
         try {
             connection.sync().del(key)
         } catch (ex: RedisException) {
@@ -179,7 +179,6 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         val creationTime = System.currentTimeMillis()
 
         val values = arrayOf(
-            key,
             (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString(),
             (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString(),
             (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString(),
@@ -190,7 +189,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
 
         val command = client.connection.sync()
         val script = command.scriptLoad(SET_SCRIPT)
-        val result = command.evalsha<Int?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
+        val result = command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
         if (result == null) {
             logger.error("Put data to redis cache fault(  key: $key, region: $region ).")
         }
@@ -262,9 +261,9 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     }
 
     override fun clearRegion(region: String) {
-        val client = this.getClient()
+        val client = this.getClient(region)
         try {
-            client.connection.sync().flushall()
+            client.connection.sync().flushdb()
         }catch (ex:RedisException){
             logger.warn("Clear cache region '$region' fault .", ex)
         }
@@ -272,7 +271,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
 
     override fun clear() {
         this.clients.keys.asSequence().forEach {
-            this.clearRegion(it)
+            this.clearRegion(if(it == "--") "" else it)
         }
     }
 }

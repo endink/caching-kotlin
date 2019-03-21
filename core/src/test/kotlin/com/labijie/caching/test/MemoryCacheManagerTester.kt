@@ -1,5 +1,6 @@
 package com.labijie.caching.test
 
+import com.labijie.caching.ICacheManager
 import com.labijie.caching.memory.MemoryCacheManager
 import com.labijie.caching.memory.MemoryCacheOptions
 import org.junit.jupiter.api.*
@@ -11,13 +12,12 @@ import java.lang.reflect.InvocationTargetException
  * @date 2019-03-02
  */
 class MemoryCacheManagerTester {
-
-    private lateinit var memoryCache: MemoryCacheManager
+    private lateinit var memoryCache: ICacheManager
 
     @BeforeEach
     @Throws(Exception::class)
     fun before() {
-        this.memoryCache = MemoryCacheManager(MemoryCacheOptions())
+        this.memoryCache = this.createCache()
     }
 
     @AfterEach
@@ -25,6 +25,8 @@ class MemoryCacheManagerTester {
     fun after() {
         this.memoryCache.clear()
     }
+
+    protected fun createCache() = MemoryCacheManager()
 
     /**
      * Method: get(String key, String region)
@@ -40,7 +42,7 @@ class MemoryCacheManagerTester {
 
         val `val` = Any()
         memoryCache.set("a", `val`, null, false, "b")
-        Assertions.assertEquals(`val`, memoryCache.get("a", "b"),"get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("a", "b"), "get 方法取到的值和 set 放入的值不一致。")
     }
 
     /**
@@ -50,17 +52,17 @@ class MemoryCacheManagerTester {
     @Throws(Exception::class)
     fun testSet() {
         val `val` = Any()
-        memoryCache.set("a", `val`, null,  false, "region1")
+        memoryCache.set("a", `val`, null, false, "region1")
         memoryCache.set("b", `val`, 5000L, false, "region2")
         memoryCache.set("c", `val`, 5000L, true, null)
-        memoryCache.set("d", `val`, null,  true, null)
+        memoryCache.set("d", `val`, null, true, null)
         memoryCache.set("e", `val`, null, true, "")
 
-        Assertions.assertEquals(`val`, memoryCache.get("a", "region1"),"get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("b", "region2"),"get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("c", null as String?),"get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("d", null as String?),"get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("e", ""),"get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("a", "region1"), "get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("b", "region2"), "get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("c", null as String?), "get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("d", null as String?), "get 方法取到的值和 set 放入的值不一致。")
+        Assertions.assertEquals(`val`, memoryCache.get("e", ""), "get 方法取到的值和 set 放入的值不一致。")
     }
 
     /**
@@ -70,8 +72,8 @@ class MemoryCacheManagerTester {
     @Throws(Exception::class)
     fun testRemove() {
         val `val` = Any()
-        memoryCache.set("a", `val`, null,  false, "region1")
-        memoryCache.set("b", `val`, 5000L, false,"region2")
+        memoryCache.set("a", `val`, null, false, "region1")
+        memoryCache.set("b", `val`, 5000L, false, "region2")
         memoryCache.set("c", `val`, 5000L, true, null)
         memoryCache.set("d", `val`, null, true, null)
         memoryCache.set("e", `val`, null, true, "")
@@ -82,11 +84,11 @@ class MemoryCacheManagerTester {
         memoryCache.remove("d", null)
         memoryCache.remove("e", "")
 
-        Assertions.assertNull(memoryCache.get("a", "region1"),"remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("b", "region2"),"remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("c", null as String?),"remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("d", null as String?),"remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("e", ""),"remove 方法未生效。")
+        Assertions.assertNull(memoryCache.get("a", "region1"), "remove 方法未生效。")
+        Assertions.assertNull(memoryCache.get("b", "region2"), "remove 方法未生效。")
+        Assertions.assertNull(memoryCache.get("c", null as String?), "remove 方法未生效。")
+        Assertions.assertNull(memoryCache.get("d", null as String?), "remove 方法未生效。")
+        Assertions.assertNull(memoryCache.get("e", ""), "remove 方法未生效。")
     }
 
 
@@ -97,12 +99,12 @@ class MemoryCacheManagerTester {
     @Throws(Exception::class)
     fun testClearRegion() {
         val `val` = Any()
-        memoryCache.set("a", `val`, null,  false, "region1")
+        memoryCache.set("a", `val`, null, false, "region1")
         memoryCache.set("b", `val`, 5000L, false, "region2")
-        memoryCache.set("c", `val`, 5000L,  true)
-        memoryCache.set("d", `val`, null,  true)
+        memoryCache.set("c", `val`, 5000L, true)
+        memoryCache.set("d", `val`, null, true)
         memoryCache.set("e", `val`, null, true, "")
-        memoryCache.set("f", `val`, 5000L,  false, "region3")
+        memoryCache.set("f", `val`, 5000L, false, "region3")
 
         memoryCache.clearRegion("region1")
         memoryCache.clearRegion("region2")
@@ -122,11 +124,11 @@ class MemoryCacheManagerTester {
     @Throws(Exception::class)
     fun testClear() {
         val `val` = Any()
-        memoryCache.set("a", `val`, null,  false, "region1")
-        memoryCache.set("b", `val`, 5000L,  false, "region2")
-        memoryCache.set("c", `val`, 5000L,  true)
-        memoryCache.set("d", `val`, null,  true)
-        memoryCache.set("e", `val`, null,  true, "")
+        memoryCache.set("a", `val`, null, false, "region1")
+        memoryCache.set("b", `val`, 5000L, false, "region2")
+        memoryCache.set("c", `val`, 5000L, true)
+        memoryCache.set("d", `val`, null, true)
+        memoryCache.set("e", `val`, null, true, "")
 
         memoryCache.clear()
 
@@ -157,5 +159,4 @@ class MemoryCacheManagerTester {
         }
 
     }
-
 }

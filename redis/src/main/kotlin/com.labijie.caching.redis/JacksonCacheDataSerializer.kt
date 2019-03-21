@@ -9,10 +9,18 @@ import kotlin.reflect.KClass
  * @author Anders Xiao
  * @date 2019-03-20
  */
-class JacksonCacheDataSerializer @JvmOverloads constructor(private val jacksonMapper: ObjectMapper? = null) : ICacheDataSerializer {
+class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper? = null) : ICacheDataSerializer {
 
-    override fun <T:Any> deserializeData(type: KClass<T>, data: String): T? {
-        if (data.isNullOrEmpty()) {
+    companion object {
+        const val NAME = "json"
+        private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
+    }
+
+    private val jacksonMapper: ObjectMapper = mapper ?: ObjectMapper()
+
+
+    override fun <T : Any> deserializeData(type: KClass<T>, data: String): T? {
+        if (data.isEmpty()) {
             @Suppress("CAST_NEVER_SUCCEEDS")
             return null as? T
         }
@@ -24,7 +32,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(private val jacksonMa
         }
     }
 
-    override fun serializeData(data: Any, gzipCompress: Boolean): String? {
+    override fun serializeData(data: Any): String {
         try {
             return jacksonMapper!!.writeValueAsString(data)
         } catch (ex: Exception) {
@@ -34,7 +42,5 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(private val jacksonMa
 
     }
 
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
-    }
+
 }

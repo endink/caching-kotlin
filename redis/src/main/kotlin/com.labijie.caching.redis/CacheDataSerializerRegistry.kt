@@ -11,7 +11,7 @@ import java.util.Map
 object CacheDataSerializerRegistry {
     private val serializers: MutableMap<String, ICacheDataSerializer> = mutableMapOf()
     init {
-        this.registerSerializer("json", JacksonCacheDataSerializer())
+        this.registerSerializer(JacksonCacheDataSerializer.NAME, JacksonCacheDataSerializer())
     }
 
     fun getSerializer(serializerName: String): ICacheDataSerializer {
