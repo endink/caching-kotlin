@@ -100,7 +100,7 @@ subprojects {
                         version project.rootProject.version
                     }
                 }
-                //gradle -Dmu="admin" -Dmp="password" -Dsigning.password="" uploadArchives
+                //gradle -Dmu="admin" -Dmp="password" uploadArchives
                 def u = System.properties.getProperty("mu")
                 def p = System.properties.getProperty("mp")
 
@@ -111,7 +111,9 @@ subprojects {
 
                     mavenDeployer {
 
-                        if (project.hasProperty("signing.password")) {
+                        if (project.hasProperty('signing.keyId') &&
+                                project.hasProperty('signing.secretKeyRingFile') &&
+                                project.hasProperty("signing.password")) {
                             beforeDeployment { MavenDeployment deployment ->
                                 System.out.println("sign: " + u)
                                 signing.signPom(deployment)
@@ -146,12 +148,22 @@ subprojects {
                             }
                         }
 
-                        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                            authentication(userName: u, password: p)
-                        }
+//                        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+//                            authentication(userName: u, password: p)
+//                        }
+//
+//                        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
+//                            authentication(userName: u, password: p)
+//                        }
 
-                        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                            authentication(userName: u, password: p)
+                        mavenDeployer {
+                            snapshotRepository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-snapshots/") {
+                                authentication(userName: u, password: p)
+                            }
+
+                            repository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-releases/") {
+                                authentication(userName: u, password: p)
+                            }
                         }
                     }
                 }

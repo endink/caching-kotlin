@@ -7,7 +7,7 @@ import java.time.Duration
  * @author Anders Xiao
  * @date 2019-03-20
  */
-class RedisCacheConfig {
+open class RedisCacheConfig {
     var defaultRegion: String = ""
     var regions: MutableSet<RedisRegionOptions> = mutableSetOf()
 }
