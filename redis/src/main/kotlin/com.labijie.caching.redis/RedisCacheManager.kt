@@ -2,7 +2,6 @@ package com.labijie.caching.redis
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
-import com.labijie.caching.redis.configuration.RedisRegionOptions
 import io.lettuce.core.KeyValue
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisException
