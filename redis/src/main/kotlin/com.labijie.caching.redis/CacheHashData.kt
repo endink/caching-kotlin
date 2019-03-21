@@ -5,7 +5,7 @@ package com.labijie.caching.redis
  * @author Anders Xiao
  * @date 2019-03-20
  */
-internal class CacheHashData @JvmOverloads constructor(
+internal class CacheHashData(
     var type: String,
     var data: String,
     var serializer: String

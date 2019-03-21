@@ -275,8 +275,8 @@ class CacheEntry
     }
 
     //处理引用比较提高性能。
-    override fun equals(obj2: Any?): Boolean {
-        return this === obj2
+    override fun equals(other: Any?): Boolean {
+        return this === other
     }
 
     companion object {

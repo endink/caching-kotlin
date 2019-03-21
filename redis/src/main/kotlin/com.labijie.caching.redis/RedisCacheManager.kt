@@ -1,6 +1,7 @@
 package com.labijie.caching.redis
 
 import com.labijie.caching.ICacheManager
+import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import io.lettuce.core.KeyValue
 import io.lettuce.core.RedisClient
@@ -8,7 +9,6 @@ import io.lettuce.core.RedisException
 import io.lettuce.core.ScriptOutputType
 import io.lettuce.core.api.StatefulRedisConnection
 import org.slf4j.LoggerFactory
-import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -17,7 +17,7 @@ import kotlin.reflect.KClass
  * @author Anders Xiao
  * @date 2019-03-20
  */
-open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: RedisCacheConfig) : ICacheManager {
+open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICacheManager {
 
     private val NEW_LINE = System.lineSeparator()
 
@@ -68,8 +68,8 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
             val c = RedisClient.create(config.url)
             val connection = c.connect()
 
-            val name = if(region.isNullOrBlank()) "" else region
-            RedisClientInternal(name, connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
+            val n = if(region.isNullOrBlank()) "" else region
+            RedisClientInternal(n, connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
             client.client.shutdown()
@@ -150,7 +150,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         sldExpr: Long?
     ) {
         // Note Refresh has no effect if there is just an absolute expiration (or neither).
-        var expr: Long? = null
+        val expr: Long?
         if (sldExpr != null && sldExpr != NOT_PRESENT) {
             if (absExpr != null && absExpr != NOT_PRESENT) {
                 val relExpr = absExpr - System.currentTimeMillis()
@@ -213,7 +213,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
             val cacheHashData = this.getAndRefresh(client.connection, key, true)
             if (cacheHashData != null) {
                 //考虑程序变更后类型可能已经不存在或更名。
-                var clazz: KClass<*>? = null
+                val clazz: KClass<*>?
                 try {
                     clazz = Class.forName(cacheHashData.type).kotlin
                 } catch (cne: ClassNotFoundException) {
@@ -246,12 +246,12 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     override fun set(
         key: String,
         data: Any,
-        timeoutMilliseconds: Long?,
-        useSlidingExpiration: Boolean,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
         region: String?
     ) {
         try {
-            this.setCore(key, region, data, timeoutMilliseconds, useSlidingExpiration)
+            this.setCore(key, region, data, expireMills, timePolicy == TimePolicy.Sliding)
         }catch (ex:RedisException){
             logger.warn("Set cache data fault ( key: $key, region: $region ).", ex)
         }

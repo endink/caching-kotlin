@@ -1,9 +1,6 @@
 package com.labijie.caching.memory
 
-import com.labijie.caching.EvictionReason
-import com.labijie.caching.ICacheManager
-import com.labijie.caching.IPostEvictionCallback
-import com.labijie.caching.PostEvictionCallbackRegistration
+import com.labijie.caching.*
 import java.util.HashSet
 import java.util.concurrent.ConcurrentHashMap
 
@@ -26,13 +23,12 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     }
 
     private fun getFullKey(region: String?, key: String): String {
-        var region = region
-        region = getRegionName(region)
-        return "$region|$key"
+        val r = getRegionName(region)
+        return "$r|$key"
     }
 
     private fun getRegionName(region: String?): String {
-        return if (region.isNullOrBlank()) DEFAULT_REGION_NAME else region!!.trim { it <= ' ' }
+        return if (region.isNullOrBlank()) DEFAULT_REGION_NAME else region.trim { it <= ' ' }
     }
 
     private fun getRegionNameFormFullKey(fullKey: String): String {
@@ -49,12 +45,12 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         return options
     }
 
-    private fun callback(key: Any, item: Any, reason: EvictionReason, state: Any) {
-        val stringKey = key.toString() ?: ""
+    private fun callback(key: Any, reason: EvictionReason) {
+        val stringKey = key.toString()
         val region = this.getRegionNameFormFullKey(stringKey)
         when (reason) {
             EvictionReason.Capacity, EvictionReason.Removed, EvictionReason.Expired -> {
-                val regionKeys = caches!![region]
+                val regionKeys = caches[region]
                 regionKeys?.remove(stringKey)
             }
             else -> {
@@ -74,8 +70,8 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     override fun set(
         key: String,
         data: Any,
-        timeoutMilliseconds: Long?,
-        useSlidingExpiration: Boolean,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
         region: String?
     ) {
         this.validateRegion(region)
@@ -83,12 +79,12 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         val name = getRegionName(region)
         val fullKey = this.getFullKey(name, key)
 
-        val regionKeys = caches.computeIfAbsent(name) { k -> HashSet() }
+        val regionKeys = caches.computeIfAbsent(name) { HashSet() }
         regionKeys.add(fullKey)
-        val options = createTimeoutOptions(timeoutMilliseconds, useSlidingExpiration)
+        val options = createTimeoutOptions(expireMills, timePolicy == TimePolicy.Sliding)
         options.postEvictionCallbacks.add(PostEvictionCallbackRegistration(object : IPostEvictionCallback {
             override fun callback(key: Any, value: Any, reason: EvictionReason, state: Any) {
-                (state as MemoryCacheManager).callback(key, value, reason, state)
+                (state as MemoryCacheManager).callback(key, reason)
             }
         }, this))
         cache.set(fullKey, data, options)
@@ -115,7 +111,7 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         val regionKeys = caches.getOrDefault(name, null)
         if (regionKeys != null) {
             for (v in regionKeys) {
-                cache!!.remove(v)
+                cache.remove(v)
             }
         }
     }

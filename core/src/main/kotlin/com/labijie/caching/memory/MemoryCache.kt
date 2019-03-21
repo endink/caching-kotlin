@@ -171,23 +171,22 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         priorEntry?.setExpired(EvictionReason.Replaced)
 
         if (!entry.checkExpired(utcNow)) {
-            var entryAdded = false
-
-            if (priorEntry == null) {
+            var entryAdded = if (priorEntry == null) {
                 // 注意：只在没有存在键时候添加。
                 val inMap = this.entries.computeIfAbsent(entry.key) { entry }
-                entryAdded = inMap === entry //同 一个引用表明已经被添加。
+                inMap === entry //同 一个引用表明已经被添加。
             } else {
                 // 这里表示新的项没有被添加进去，可能 getOrDefault 之后有其他线程去动了缓存项。
                 //发生这种情况时候看看新的项是不是我们添加进去的，通过 replace 确认一下
-                entryAdded = this.entries.replace(entry.key, priorEntry, entry)
+                val added = this.entries.replace(entry.key, priorEntry, entry)
 
-                if (!entryAdded) {
+                if (!added) {
                     // 确定有其他线程动过这个的缓存项了，尝试看看是不是过期了，不是过期以另外一个线程给进去的值稳准。
                     // 如果过期了要主要不要让他过期，所以 Absent 确保有值，我们正在做 set 啊，没值会很奇怪。
                     val inMap = this.entries.computeIfAbsent(entry.key) { entry }
-                    entryAdded = (inMap === entry)
+                   (inMap === entry)
                 }
+                added
             }
 
             if (entryAdded) {
@@ -215,7 +214,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
 
     private fun startScanForExpiredItems() {
         val now = LocalDateTime.now(ZoneOffset.UTC)
-        if (this.lastExpirationScan!!.plus(
+        if (this.lastExpirationScan.plus(
                 this.expirationScanFrequencyMilliseconds!!,
                 ChronoUnit.MILLIS
             ).compareTo(now) < 0

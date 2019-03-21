@@ -25,7 +25,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
             return null as? T
         }
         try {
-            return this.jacksonMapper!!.readValue(data, type.java)
+            return this.jacksonMapper.readValue(data, type.java)
         } catch (ex: Exception) {
             LOGGER.error("Redis cache manager serialize fault ( class: ${type.java.simpleName} ).", ex)
             throw RuntimeException(ex)
@@ -34,7 +34,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
 
     override fun serializeData(data: Any): String {
         try {
-            return jacksonMapper!!.writeValueAsString(data)
+            return jacksonMapper.writeValueAsString(data)
         } catch (ex: Exception) {
             LOGGER.error("Redis cache manager serialize fault ( class: ${data::class.java.simpleName} ).", ex)
             throw RuntimeException(ex)

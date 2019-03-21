@@ -1,6 +1,7 @@
 package com.labijie.caching.test
 
 import com.labijie.caching.ICacheManager
+import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
@@ -54,7 +55,7 @@ class RedisCacheManagerTester {
         Assertions.assertNull(redisCache.get("a", null), "当值不存在时 get 应为 null")
 
         val `val` = TestData()
-        redisCache.set("a", `val`, null, false, "region2")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region2")
         val saved = redisCache.get("a", "region2")
         Assertions.assertEquals(`val`, saved, "get 方法取到的值和 set 放入的值不一致。")
     }
@@ -66,11 +67,11 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testSet() {
         val `val` = TestData()
-        redisCache.set("a", `val`, null, false, "region1")
-        redisCache.set("b", `val`, 5000L, false, "region2")
-        redisCache.set("c", `val`, 5000L, true, null)
-        redisCache.set("d", `val`, null, true, null)
-        redisCache.set("e", `val`, null, true, "")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
+        redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
+        redisCache.set("c", `val`, 5000L, TimePolicy.Absolute, null)
+        redisCache.set("d", `val`, null, TimePolicy.Sliding, null)
+        redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
         Assertions.assertEquals(`val`, redisCache.get("a", "region1"), "get 方法取到的值和 set 放入的值不一致。")
         Assertions.assertEquals(`val`, redisCache.get("b", "region2"), "get 方法取到的值和 set 放入的值不一致。")
@@ -86,11 +87,11 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testRemove() {
         val `val` = TestData()
-        redisCache.set("a", `val`, null, false, "region1")
-        redisCache.set("b", `val`, 5000L, false, "region2")
-        redisCache.set("c", `val`, 5000L, true, null)
-        redisCache.set("d", `val`, null, true, null)
-        redisCache.set("e", `val`, null, true, "")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
+        redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
+        redisCache.set("c", `val`, 5000L, TimePolicy.Sliding, null)
+        redisCache.set("d", `val`, null, TimePolicy.Sliding, null)
+        redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
         redisCache.remove("a", "region1")
         redisCache.remove("b", "region2")
@@ -113,12 +114,12 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testClearRegion() {
         val `val` = TestData()
-        redisCache.set("a", `val`, null, false, "region1")
-        redisCache.set("b", `val`, 5000L, false, "region2")
-        redisCache.set("c", `val`, 5000L, true)
-        redisCache.set("d", `val`, null, true)
-        redisCache.set("e", `val`, null, true, "")
-        redisCache.set("f", `val`, 5000L, false, "region3")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
+        redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
+        redisCache.set("c", `val`, 5000L, TimePolicy.Absolute)
+        redisCache.set("d", `val`, null, TimePolicy.Sliding)
+        redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
+        redisCache.set("f", `val`, 5000L, TimePolicy.Absolute, "region3")
 
         redisCache.clearRegion("region1")
         redisCache.clearRegion("region2")
@@ -138,11 +139,11 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testClear() {
         val `val` = TestData()
-        redisCache.set("a", `val`, null, false, "region1")
-        redisCache.set("b", `val`, 5000L, false, "region2")
-        redisCache.set("c", `val`, 5000L, true)
-        redisCache.set("d", `val`, null, true)
-        redisCache.set("e", `val`, null, true, "")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
+        redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
+        redisCache.set("c", `val`, 5000L, TimePolicy.Sliding)
+        redisCache.set("d", `val`, null, TimePolicy.Sliding)
+        redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
         redisCache.clear()
 

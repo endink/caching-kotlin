@@ -4,7 +4,6 @@ import com.sun.management.GarbageCollectionNotificationInfo
 import java.lang.management.ManagementFactory
 import java.util.*
 import java.util.function.Consumer
-import javax.management.Notification
 import javax.management.NotificationEmitter
 import javax.management.NotificationListener
 import javax.management.openmbean.CompositeData
@@ -35,11 +34,11 @@ object GcNotification {
     fun register(state: Any?, callback: Consumer<Any?>) {
         ManagementFactory.getGarbageCollectorMXBeans().forEach { bean ->
             val notification = bean as NotificationEmitter
-            notification.addNotificationListener(NotificationListener { notification, handback ->
-                val notifType = notification.type
+            notification.addNotificationListener(NotificationListener { n, _ ->
+                val notifyType = n.type
 
-                if (notifType == GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION) {
-                    val cd = notification.userData as CompositeData
+                if (notifyType == GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION) {
+                    val cd = n.userData as CompositeData
                     val info = GarbageCollectionNotificationInfo.from(cd)
                     val gcName = info.gcName
                     if (Arrays.binarySearch(OLDGEN_COLLECTOR_NAMES, gcName) >= 0) {

@@ -1,8 +1,5 @@
 package com.labijie.caching.redis
 
-import java.util.HashMap
-import java.util.Map
-
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao

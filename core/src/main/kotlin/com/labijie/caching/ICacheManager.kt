@@ -24,11 +24,11 @@ interface ICacheManager {
      * 将对象以指定的缓键添加到缓存, 如果已存在键为 key 的缓存对象 ，则更新此对象。
      * @param key 缓存键。
      * @param data 要添加到缓存的对象。
-     * @param timeoutMilliseconds  缓存过期时间， 为空表示永不过期（单位：毫秒）。
+     * @param expireMills  缓存过期时间， 为空表示永不过期（单位：毫秒）。
      * @param region 缓存区域。
-     * @param useSlidingExpiration 指示是否使用滑动时间（每次使用会刷新过期时间）过期策略。
+     * @param timePolicy 指示是否使用的过期时间策略。
      */
-    fun set(key: String, data: Any, timeoutMilliseconds: Long? = null, useSlidingExpiration: Boolean = false, region: String? = null)
+    fun set(key: String, data: Any, expireMills: Long? = null, timePolicy: TimePolicy = TimePolicy.Absolute, region: String? = null)
 
     /**
      * 从缓存中移除指定键的缓存实例。
@@ -60,24 +60,24 @@ interface ICacheManager {
      * 如果缓存中存在指定键的缓存项则从缓存中获取该项，如果不存在，使用指定的工厂方法创建并加入到缓存。
      * @param key 要获取的缓存键。
      * @param factory 当键不存在时用于创建对象的工厂方法。
-     * @param timeoutMilliseconds 当发生添加缓存项时用于设置缓存项的过期时间。
+     * @param expireMills 当发生添加缓存项时用于设置缓存项的过期时间。
      * @param region 要从中获取缓存的缓存区域。
-     * @param useSlidingExpiration 是否使用滑动过期时间。
+     * @param timePolicy 是否使用过期时间策略。
      * @param <T> 缓存对象类型参数。
      * @return 从缓存中获取到的或新创建的缓存。
     </T> */
     fun <T> getOrSet(
         key: String,
         factory: Function<String, T>,
-        timeoutMilliseconds: Long? = null,
-        useSlidingExpiration: Boolean = false,
+        expireMills: Long? = null,
+        timePolicy: TimePolicy = TimePolicy.Absolute,
         region: String? = null
     ): T? {
         var data: Any? = get(key, region)
         if (data == null) {
             data = factory.apply(key)
             if (data != null) {
-                set(key, data, timeoutMilliseconds, useSlidingExpiration, region)
+                set(key, data, expireMills, timePolicy, region)
             }
         }
         @Suppress("UNCHECKED_CAST")

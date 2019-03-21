@@ -90,7 +90,7 @@ subprojects {
                 mavenDeployer {
                     repository(url: "file://" + System.properties['user.home'] + "/.m2/repository")
                     pom.project {
-                        artifactId "labijie-caching" + (project.name == "core" ? "" : "-" + project.name)
+                        artifactId "labijie-caching-kt" + (project.name == "core" ? "" : "-" + project.name)
                         version project.rootProject.version
                     }
                 }
