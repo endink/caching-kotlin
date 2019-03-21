@@ -8,6 +8,7 @@ import io.lettuce.core.RedisException
 import io.lettuce.core.ScriptOutputType
 import io.lettuce.core.api.StatefulRedisConnection
 import org.slf4j.LoggerFactory
+import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 
@@ -127,8 +128,8 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         if (hashResult.size >= 2) {
             this.refreshExpire(
                 connection, key,
-                hashResult.getValue(ABSOLUTE_EXPIRATIONKEY)?.toLongOrNull(),
-                hashResult.getValue(SLIDING_EXPIRATION_KEY)?.toLongOrNull()
+                hashResult.getValue(ABSOLUTE_EXPIRATIONKEY).toLongOrNull(),
+                hashResult.getValue(SLIDING_EXPIRATION_KEY).toLongOrNull()
             )
         }
 
@@ -157,8 +158,11 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
             } else {
                 expr = sldExpr
             }
-            connection.sync().expire(key, expr / 1000)
-            // TODO: Error handling
+            try {
+                connection.sync().expire(key, expr / 1000)
+            }catch (ex:RedisException){
+                logger.warn("Refresh cache key '$key' fault.", ex)
+            }
         }
     }
 
