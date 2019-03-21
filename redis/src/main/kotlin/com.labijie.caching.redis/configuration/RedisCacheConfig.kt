@@ -9,5 +9,5 @@ import java.time.Duration
  */
 class RedisCacheConfig {
     var defaultRegion: String = ""
-    var regions: MutableMap<String, RedisRegionOptions> = mutableMapOf()
+    var regions: MutableSet<RedisRegionOptions> = mutableSetOf()
 }

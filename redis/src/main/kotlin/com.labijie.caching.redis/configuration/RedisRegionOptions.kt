@@ -8,10 +8,13 @@ import java.time.Duration
  * @author Anders Xiao
  * @date 2019-03-20
  */
-data class RedisRegionOptions(var uri: String = "",
-                              var timeout: Duration = Duration.ofSeconds(10),
-                              var serializer: String = JacksonCacheDataSerializer.NAME,
-                              var password: String = "",
-                              var database: Int = 0) {
+data class RedisRegionOptions(
+    var name:String = "",
+    var uri: String = "",
+    var timeout: Duration = Duration.ofSeconds(10),
+    var serializer: String = JacksonCacheDataSerializer.NAME,
+    var password: String = "",
+    var database: Int = 0
+) {
 
 }

@@ -48,19 +48,19 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
 
     fun getClient(region: String? = null): RedisClientInternal {
-        if(region == "--"){
+        if (region == "--") {
             throw RedisCacheException("Cache region name must not be '--'.")
         }
         if (redisConfig.regions.isEmpty()) {
             throw RedisCacheException("At least one redis cache region to be configured")
         }
         val config = if (region.isNullOrBlank()) {
-            redisConfig.regions.values.first()
+            redisConfig.regions.first()
         } else {
-            redisConfig.regions.getOrDefault(region, null)
+            redisConfig.regions.firstOrNull { r -> r.name == region.trim() }
                 ?: throw RedisCacheException("Cant found redis cache region '$region' that be configured")
         }
-        val r = if(region.isNullOrBlank()) "--" else region
+        val r = if (region.isNullOrBlank()) "--" else region.trim()
         val client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
             val c = RedisClient.create(config.uri)
@@ -80,7 +80,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         }.toMap()
     }
 
-    private fun <T:Any> deserializeData(serializerName: String, type: KClass<T>, data: String): T? {
+    private fun <T : Any> deserializeData(serializerName: String, type: KClass<T>, data: String): T? {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.deserializeData(type, data)
     }
@@ -160,7 +160,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         }
     }
 
-    protected fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region:String?) {
+    protected fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region: String?) {
         try {
             connection.sync().del(key)
         } catch (ex: RedisException) {
@@ -169,7 +169,13 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
 
     }
 
-    protected fun setCore(key: String, region: String?, data: Any?, timeoutMills: Long?, useSlidingExpiration: Boolean) {
+    protected fun setCore(
+        key: String,
+        region: String?,
+        data: Any?,
+        timeoutMills: Long?,
+        useSlidingExpiration: Boolean
+    ) {
         val client = this.getClient(region)
         if (data == null) {
             this.removeCore(client.connection, key, region)
@@ -206,7 +212,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
                     clazz = Class.forName(cacheHashData.type).kotlin
                 } catch (cne: ClassNotFoundException) {
                     this.remove(key, region)
-                   logger.warn("The specified type '${cacheHashData.type}' could not be found to deserialize the cached data, and the cache with key '$key' has been removed ( region: $region ).")
+                    logger.warn("The specified type '${cacheHashData.type}' could not be found to deserialize the cached data, and the cache with key '$key' has been removed ( region: $region ).")
                     return null
                 }
 
@@ -216,7 +222,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
                 } catch (ex: Throwable) {
                     logger.warn("The specified type '${cacheHashData.type}' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
 
-                    if(ex is OutOfMemoryError || ex is StackOverflowError){
+                    if (ex is OutOfMemoryError || ex is StackOverflowError) {
                         throw ex
                     }
                     this.removeCore(client.connection, key, region)
@@ -253,7 +259,7 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         try {
             this.getAndRefresh(client.connection, key, false)
             return true
-        }catch (ex:RedisException){
+        } catch (ex: RedisException) {
             logger.warn("Refresh cache fault ( key: $key, region: $region).", ex)
             return false
         }
@@ -263,14 +269,14 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         val client = this.getClient(region)
         try {
             client.connection.sync().flushdb()
-        }catch (ex:RedisException){
+        } catch (ex: RedisException) {
             logger.warn("Clear cache region '$region' fault .", ex)
         }
     }
 
     override fun clear() {
         this.clients.keys.asSequence().forEach {
-            this.clearRegion(if(it == "--") "" else it)
+            this.clearRegion(if (it == "--") "" else it)
         }
     }
 }
