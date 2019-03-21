@@ -54,19 +54,21 @@ open class RedisCacheManager @JvmOverloads constructor(private val redisConfig: 
         if (redisConfig.regions.isEmpty()) {
             throw RedisCacheException("At least one redis cache region to be configured")
         }
-        val config = if (region.isNullOrBlank()) {
+        val name = if(region.isNullOrBlank()) redisConfig.defaultRegion.trim() else region.trim()
+        val config = if (name.isBlank()) {
             redisConfig.regions.first()
         } else {
-            redisConfig.regions.firstOrNull { r -> r.name == region.trim() }
-                ?: throw RedisCacheException("Cant found redis cache region '$region' that be configured")
+            redisConfig.regions.firstOrNull { r -> r.name == name }
+                ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
-        val r = if (region.isNullOrBlank()) "--" else region.trim()
+        val r = if (name.isBlank()) "--" else name
         val client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
-            val c = RedisClient.create(config.uri)
+            val c = RedisClient.create(config.url)
             val connection = c.connect()
 
-            RedisClientInternal(connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
+            val name = if(region.isNullOrBlank()) "" else region
+            RedisClientInternal(name, connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
             client.client.shutdown()

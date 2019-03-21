@@ -33,10 +33,10 @@ class RedisCacheManagerTester {
 
     protected fun createCache(): RedisCacheManager {
         val redisConfig = RedisCacheConfig()
-        redisConfig.regions.add(RedisRegionOptions("default", uri = "${TestingServer.serverUri}/0"))
-        redisConfig.regions.add(RedisRegionOptions("region1",uri = "${TestingServer.serverUri}/1"))
-        redisConfig.regions.add(RedisRegionOptions("region2",uri = "${TestingServer.serverUri}/2"))
-        redisConfig.regions.add(RedisRegionOptions("region3",uri = "${TestingServer.serverUri}/3"))
+        redisConfig.regions.add(RedisRegionOptions("default", url = "${TestingServer.serverUri}/0"))
+        redisConfig.regions.add(RedisRegionOptions("region1",url = "${TestingServer.serverUri}/1"))
+        redisConfig.regions.add(RedisRegionOptions("region2",url = "${TestingServer.serverUri}/2"))
+        redisConfig.regions.add(RedisRegionOptions("region3",url = "${TestingServer.serverUri}/3"))
 
         return RedisCacheManager(redisConfig)
     }

@@ -10,7 +10,7 @@ import java.time.Duration
  */
 data class RedisRegionOptions(
     var name:String = "",
-    var uri: String = "",
+    var url: String = "",
     var timeout: Duration = Duration.ofSeconds(10),
     var serializer: String = JacksonCacheDataSerializer.NAME,
     var password: String = "",
