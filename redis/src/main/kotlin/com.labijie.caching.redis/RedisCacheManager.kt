@@ -45,13 +45,14 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
     companion object {
         val logger = LoggerFactory.getLogger(RedisCacheManager::class.java)
+        const val NULL_REGION_NAME = "--"
     }
 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
 
     fun getClient(region: String? = null): RedisClientInternal {
-        if (region == "--") {
-            throw RedisCacheException("Cache region name must not be '--'.")
+        if (region == NULL_REGION_NAME) {
+            throw RedisCacheException("Cache region name can not be '--'.")
         }
         if (redisConfig.regions.isEmpty()) {
             throw RedisCacheException("At least one redis cache region to be configured")
@@ -63,7 +64,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             redisConfig.regions.firstOrNull { r -> r.name == name }
                 ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
-        val r = if (name.isBlank()) "--" else name
+        val r = if (name.isBlank()) NULL_REGION_NAME else name
         val client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
             val c = RedisClient.create(config.url)
@@ -301,7 +302,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
     override fun clear() {
         this.clients.keys.asSequence().forEach {
-            this.clearRegion(if (it == "--") "" else it)
+            this.clearRegion(if (it == NULL_REGION_NAME) "" else it)
         }
     }
 }

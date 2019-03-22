@@ -13,8 +13,7 @@ data class RedisRegionOptions(
     var url: String = "",
     var timeout: Duration = Duration.ofSeconds(10),
     var serializer: String = JacksonCacheDataSerializer.NAME,
-    var password: String = "",
-    var database: Int = 0
+    var password: String = ""
 ) {
 
 }
