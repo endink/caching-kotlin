@@ -1,5 +1,6 @@
 package com.labijie.caching
 
+import org.slf4j.LoggerFactory
 import java.util.function.Function
 import kotlin.reflect.KClass
 
@@ -18,6 +19,7 @@ interface ICacheManager {
      * @param region 缓存区域（可以为空或空串）。
      * @return 缓存键对应的缓存实例。为空表示缓存中不存在键为 key 的对象。
      */
+    @Throws(CacheException::class)
     fun get(key: String, region: String? = null): Any?
 
     /**
@@ -28,6 +30,7 @@ interface ICacheManager {
      * @param region 缓存区域。
      * @param timePolicy 指示是否使用的过期时间策略。
      */
+    @Throws(CacheException::class)
     fun set(key: String, data: Any, expireMills: Long? = null, timePolicy: TimePolicy = TimePolicy.Absolute, region: String? = null)
 
     /**
@@ -35,6 +38,7 @@ interface ICacheManager {
      * @param key 要移除的缓存实例的键值。
      * @param region 缓存区域。
      */
+    @Throws(CacheException::class)
     fun remove(key: String, region: String? = null)
 
     /**
@@ -43,17 +47,20 @@ interface ICacheManager {
      * @param region 缓存区域。
      * @return 返回一个布尔值，指示是否缓存对象被刷新（如果缓存中未找到对象会返回 null）。
      */
+    @Throws(CacheException::class)
     fun refresh(key: String, region: String? = null): Boolean
 
     /**
      * 清空指定区域的缓存。
      * @param region 要清理的缓存区域。
      */
+    @Throws(CacheException::class)
     fun clearRegion(region: String)
 
     /**
      * 清理所有的缓存。
      */
+    @Throws(CacheException::class)
     fun clear()
 
     /**
@@ -71,13 +78,30 @@ interface ICacheManager {
         factory: Function<String, T>,
         expireMills: Long? = null,
         timePolicy: TimePolicy = TimePolicy.Absolute,
-        region: String? = null
+        region: String? = null,
+        preventException:Boolean = true
     ): T? {
-        var data: Any? = get(key, region)
+        var data: Any? = try{
+            get(key, region)
+        }catch (ex:CacheException){
+            if(!preventException) {
+                throw ex
+            }else{
+                LoggerFactory.getLogger(ICacheManager::class.java).warn("Get cache data fault.", ex)
+            }
+        }
         if (data == null) {
             data = factory.apply(key)
             if (data != null) {
-                set(key, data, expireMills, timePolicy, region)
+                try {
+                    set(key, data, expireMills, timePolicy, region)
+                }catch (ex:CacheException){
+                    if(!preventException) {
+                        throw ex
+                    }else{
+                        LoggerFactory.getLogger(ICacheManager::class.java).warn("Set cache data fault.", ex)
+                    }
+                }
             }
         }
         @Suppress("UNCHECKED_CAST")
@@ -91,6 +115,7 @@ interface ICacheManager {
      * @param valueType 缓存项的类型 。
      * @return 缓存键对应的缓存实例。为空表示缓存中不存在键为 key 的对象。
      */
+    @Throws(CacheException::class)
     fun <T:Any> get(key: String, valueType: KClass<T>, region: String? = null): T? {
         @Suppress("UNCHECKED_CAST")
         return get(key, region) as? T

@@ -1,5 +1,6 @@
 package com.labijie.caching.redis
 
+import com.labijie.caching.CacheException
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.configuration.RedisCacheConfig
@@ -55,7 +56,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         if (redisConfig.regions.isEmpty()) {
             throw RedisCacheException("At least one redis cache region to be configured")
         }
-        val name = if(region.isNullOrBlank()) redisConfig.defaultRegion.trim() else region.trim()
+        val name = if (region.isNullOrBlank()) redisConfig.defaultRegion.trim() else region.trim()
         val config = if (name.isBlank()) {
             redisConfig.regions.first()
         } else {
@@ -68,7 +69,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             val c = RedisClient.create(config.url)
             val connection = c.connect()
 
-            val n = if(region.isNullOrBlank()) "" else region
+            val n = if (region.isNullOrBlank()) "" else region
             RedisClientInternal(n, connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
@@ -96,7 +97,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
     private fun validateKey(key: String) {
         if (key.isBlank()) {
-            throw IllegalArgumentException("Cache key cant not be null or empty string")
+            throw CacheException("Cache key cant not be null or empty string")
         }
     }
 
@@ -158,11 +159,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             } else {
                 expr = sldExpr
             }
-            try {
-                connection.sync().expire(key, expr / 1000)
-            }catch (ex:RedisException){
-                logger.warn("Refresh cache key '$key' fault.", ex)
-            }
+            connection.sync().expire(key, expr / 1000)
         }
     }
 
@@ -170,7 +167,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         try {
             connection.sync().del(key)
         } catch (ex: RedisException) {
-            logger.warn("Redis cache remove key fault ( key: $key, region: $region ).")
+            throw ex.wrap("Delete key fault ( key: $key, region: $region ).")
         }
 
     }
@@ -202,19 +199,19 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         val script = command.scriptLoad(SET_SCRIPT)
         val result = command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
         if (result == null) {
-            logger.error("Put data to redis cache fault(  key: $key, region: $region ).")
+            logger.error("Put data to redis cache fault, lua script return null (  key: $key, region: $region ).")
         }
     }
 
     private fun <T : Any> getCore(key: String, valueType: KClass<T>?, region: String?): T? {
         this.validateKey(key)
-        val client = this.getClient(region)
         try {
+            val client = this.getClient(region)
             val cacheHashData = this.getAndRefresh(client.connection, key, true)
             if (cacheHashData != null) {
                 //考虑程序变更后类型可能已经不存在或更名。
                 var clazz: KClass<*>? = valueType
-                if(clazz == null) {
+                if (clazz == null) {
                     try {
                         clazz = Class.forName(cacheHashData.type).kotlin
                     } catch (cne: ClassNotFoundException) {
@@ -240,7 +237,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
             }
         } catch (e: RedisException) {
-            logger.error("Failed to get data with key '$key' from cache region '$region'")
+            throw e.wrap("Failed to get data with key '$key' from cache region '$region'")
         }
 
         return null
@@ -267,8 +264,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
         try {
             this.setCore(key, region, data, expireMills, timePolicy == TimePolicy.Sliding)
-        }catch (ex:RedisException){
-            logger.warn("Set cache data fault ( key: $key, region: $region ).", ex)
+        } catch (ex: RedisException) {
+            throw  ex.wrap("Set cache data fault ( key: $key, region: $region ).")
         }
     }
 
@@ -277,8 +274,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         try {
             val client = this.getClient(region)
             this.removeCore(client.connection, key, region)
-        }catch (ex:RedisException){
-            logger.warn("Remove cache data fault ( key: $key, region: $region ).")
+        } catch (ex: RedisException) {
+            throw ex.wrap("Remove cache data fault ( key: $key, region: $region ).")
         }
     }
 
@@ -289,8 +286,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             this.getAndRefresh(client.connection, key, false)
             return true
         } catch (ex: RedisException) {
-            logger.warn("Refresh cache fault ( key: $key, region: $region).", ex)
-            return false
+            throw ex.wrap("Refresh cache fault ( key: $key, region: $region).")
         }
     }
 
@@ -299,7 +295,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             val client = this.getClient(region)
             client.connection.sync().flushdb()
         } catch (ex: RedisException) {
-            logger.warn("Clear cache region '$region' fault .", ex)
+            throw ex.wrap("Clear cache region '$region' fault .")
         }
     }
 
