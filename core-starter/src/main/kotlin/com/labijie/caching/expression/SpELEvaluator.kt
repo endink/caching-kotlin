@@ -18,7 +18,7 @@ class SpELEvaluator(private val spelContext: SpELContext) {
     companion object {
         const val ReturnValueName = "_RETURN"
         private val parameterNameDiscoverer = DefaultParameterNameDiscoverer()
-        private val expressionParser = SpelExpressionParser(SpelParserConfiguration(SpelCompilerMode.MIXED, null))
+        private val expressionParser = SpelExpressionParser(SpelParserConfiguration(SpelCompilerMode.IMMEDIATE, null))
     }
 
     private val parameterNames = parameterNameDiscoverer.getParameterNames(spelContext.method) ?: arrayOf()
