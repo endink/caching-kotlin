@@ -12,7 +12,7 @@ class MemoryCacheOptions {
      * 获取过期扫描的频率。
      * @return
      */
-    var scanFrequency: Duration = Duration.ofSeconds(1)
+    var scanFrequency: Duration = Duration.ofSeconds(30)
     /**
      * 是否允许收缩内存。
      * @return

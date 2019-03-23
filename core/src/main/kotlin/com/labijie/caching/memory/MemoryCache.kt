@@ -10,7 +10,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.function.Consumer
-import java.util.function.Function
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,7 +22,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
     private val setEntry: Consumer<CacheEntry>
     private val entryExpirationNotification: Consumer<CacheEntry>
 
-    private val expirationScanFrequencyMilliseconds: Long?
+    private val expirationScanFrequencyMilliseconds: Long
     private var lastExpirationScan: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
 
     init {
@@ -106,27 +105,13 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         return this.getOrDefault(key, null) as? T
     }
 
-    fun <T> getOrCreate(key: Any, factory: Function<CacheEntry, T>?): T? {
-        var result: Any? = this.get(key)
-        if (result == null && factory != null) {
-            val entry = this.createEntry(key)
-            result = factory.apply(entry)
-            if (result != null) {
-                entry.value = result
-                // 必须手动调用 close，而不能使用 try\final 结构，中间过程出错无法调用到 close 不会将缓存添加到缓存列表
-                entry.close()
-            }
-        }
-        @Suppress("UNCHECKED_CAST")
-        return result as? T
-    }
-
     fun <T> set(key: Any, value: T, options: MemoryCacheEntryOptions?): T {
         val entry = this.createEntry(key)
         if (options != null) {
             MemoryCacheEntryOptions.configureCacheEntry(entry, options)
         }
         entry.value = value
+        // 必须手动调用 close，而不能使用 try\final 结构，中间过程出错无法调用到 close 不会将缓存添加到缓存列表
         entry.close()
 
         return value
@@ -215,9 +200,9 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
     private fun startScanForExpiredItems() {
         val now = LocalDateTime.now(ZoneOffset.UTC)
         if (this.lastExpirationScan.plus(
-                this.expirationScanFrequencyMilliseconds!!,
+                this.expirationScanFrequencyMilliseconds,
                 ChronoUnit.MILLIS
-            ).compareTo(now) < 0
+            ) < now
         ) {
             this.lastExpirationScan = now
             val cache = this
