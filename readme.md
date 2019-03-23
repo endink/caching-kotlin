@@ -44,4 +44,59 @@ memoryCache.get("a")
 
 ```
 
+## Spring Integration
+
+Declare method cache using @Cached annotation.
+expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.
+
+```kotlin
+
+public interface IData {
+    @Cached(key="xxx", expireMills = 5000, region="a")
+     fun getData(): Something
+}
+
+```
+
+SpEL was supported for key attribute and region attribute:
+
+
+```kotlin
+
+public interface IUserService {
+    @Cached(key="#userId", expireMills = 5000, region="user-#{userId % 4}")
+     fun getUserById(userId: Long):User
+
+    @CacheRemove(key="#user.userId", region = region="user-#{userId % 4}")
+    fun updateUser(user: User)
+}
+
+```
+
+Sliding expiration time is also easy to use:
+
+```kotlin
+
+public interface ISessionService {
+    @Cached(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
+     fun getUserSession(userId: Long):UserSession
+}
+
+```
+
+In a nested method, you might want to prevent the cache operation. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
+
+
+```kotlin
+
+fun withoutCache(){
+    cacheScope(prevent = CacheOperation.Get){
+        val user = userService.getUserById(123456)  
+        //...
+    }
+}
+
+```
+
+
 

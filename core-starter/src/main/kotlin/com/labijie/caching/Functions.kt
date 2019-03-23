@@ -7,10 +7,12 @@ import com.labijie.caching.CacheException
  * @author Anders Xiao
  * @date 2019-03-23
  */
-fun cacheScope(vararg prevent: CacheOperation):AutoCloseable{
+fun cacheScope(vararg prevent: CacheOperation, action:()->Unit){
     val current = ICacheScopeHolder.Current
     if(current != null) {
-        return CacheScopeObject(current, prevent = *prevent)
+        CacheScopeObject(current, prevent = *prevent).use {
+            action()
+        }
     }else{
         throw CacheException("${ICacheScopeHolder::class.java.simpleName} bean could not be found or it was not ready.")
     }
