@@ -61,7 +61,8 @@ expireMills = 5000 indicates that the cache data will expires in 5 seconds after
 ```kotlin
 
 public interface IData {
-    @Cached(key="xxx", expireMills = 5000, region="a")
+
+    @Cache(key="xxx", expireMills = 5000, region="a")
      fun getData(): Something
 }
 
