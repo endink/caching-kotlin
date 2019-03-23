@@ -17,14 +17,14 @@ All of the jar packages has been uploaded to the maven central.
 Use memory cahce only:
 ```groovy
 dependencies {
-    compile "com.labijie:labijie-caching-kotlin:1.0"
+    compile "com.labijie:caching-kotlin:1.0"
 }
 ```
 
 for redis:
 ```groovy
 dependencies {
-    compile "com.labijie:labijie-caching-kotlin-redis:1.0"
+    compile "com.labijie:caching-kotlin-redis:1.0"
 }
 ```
 
@@ -47,6 +47,13 @@ memoryCache.get("a")
 ```
 
 ## Spring Integration
+
+import package:
+```groovy
+dependencies {
+    compile "com.labijie:caching-kotlin-core-starter:1.0"
+}
+```
 
 Declare method cache using @Cached annotation.
 expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.

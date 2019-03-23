@@ -129,7 +129,7 @@ subprojects {
                         pom.project {
                             name project.name
                             description 'labijie caching library'
-                            artifactId "labijie-caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
+                            artifactId "caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
                             version project.rootProject.version
                             url 'https://github.com/endink/caching-kotlin'
                             licenses {
