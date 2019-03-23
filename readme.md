@@ -73,7 +73,8 @@ SpEL was supported for key attribute and region attribute:
 ```kotlin
 
 public interface IUserService {
-    @Cached(key="#userId", expireMills = 5000, region="user-#{userId % 4}")
+
+    @Cache(key="#userId", expireMills = 5000, region="user-#{userId % 4}")
      fun getUserById(userId: Long):User
 
     @CacheRemove(key="#user.userId", region = region="user-#{userId % 4}")
@@ -87,7 +88,8 @@ Sliding expiration time is also easy to use:
 ```kotlin
 
 public interface ISessionService {
-    @Cached(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
+
+    @Cache(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
      fun getUserSession(userId: Long):UserSession
 }
 
@@ -99,6 +101,7 @@ In a nested method, you might want to prevent the cache operation. for example, 
 ```kotlin
 
 fun withoutCache(){
+
     cacheScope(prevent = CacheOperation.Get){
         val user = userService.getUserById(123456)  
         //...
