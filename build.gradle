@@ -37,6 +37,10 @@ allprojects {
 
     sourceCompatibility = 1.8
 
+    configurations {
+        all*.exclude group: "org.apache.logging.log4j"
+    }
+
 
     compileKotlin {
         kotlinOptions {
