@@ -62,7 +62,7 @@ expireMills = 5000 indicates that the cache data will expires in 5 seconds after
 
 public interface IData {
 
-    @Cache(key="xxx", expireMills = 5000, region="a")
+    @Cache(key="'mykey'", expireMills = 5000, region="a")
      fun getData(): Something
 }
 
@@ -75,10 +75,10 @@ SpEL was supported for key attribute and region attribute:
 
 public interface IUserService {
 
-    @Cache(key="#userId", expireMills = 5000, region="user-#{userId % 4}")
+    @Cache(key="#userId", expireMills = 5000, region="'user-' + #userId % 4")
      fun getUserById(userId: Long):User
 
-    @CacheRemove(key="#user.userId", region = region="user-#{userId % 4}")
+    @CacheRemove(key="#user.userId", region="'user-' + (#user.userId % 4)")
     fun updateUser(user: User)
 }
 

@@ -10,6 +10,8 @@ import java.util.concurrent.TimeUnit
  * @author Anders Xiao
  * @date 2019-03-22
  */
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FUNCTION)
 annotation class Cache(
     val key:String,
     val expireMills:Long,

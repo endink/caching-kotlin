@@ -7,4 +7,4 @@ import java.lang.reflect.Method
  * @author Anders Xiao
  * @date 2019-03-23
  */
-class SpELContext(val method:Method, val methodArgs:Array<Any>, val returnValue:Any? = null)
+class SpELContext(val method:Method, val methodArgs:Array<Any?>, val returnValue:Any? = null)

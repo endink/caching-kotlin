@@ -3,4 +3,5 @@ dependencies {
     compile "org.springframework.boot:spring-boot-starter-aop:$spring_boot_version"
     compile "org.springframework:spring-tx:$spring_version"
     compile "io.netty:netty-common:$netty_version"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 }

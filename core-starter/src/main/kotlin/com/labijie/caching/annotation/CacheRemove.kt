@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit
  * @author Anders Xiao
  * @date 2019-03-22
  */
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.FUNCTION)
 annotation class CacheRemove(
     val key:String,
     val region:String = "",

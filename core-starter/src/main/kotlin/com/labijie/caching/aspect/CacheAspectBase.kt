@@ -16,7 +16,7 @@ abstract class CacheAspectBase(protected val cacheScopeHolder: ICacheScopeHolder
         keyExpression: String,
         regionExpression: String,
         method: Method,
-        methodArgs:Array<Any> = arrayOf(),
+        methodArgs:Array<Any?> = arrayOf(),
         returnValue:Any? = null
     ): Pair<String, String> {
         val context = SpELContext(method, methodArgs, returnValue)
