@@ -18,6 +18,11 @@ class SimpleTestingBean {
         return ArgumentObject()
     }
 
+    @Cache("#arg.stringValue", 30000)
+    fun getCachedOptionalArgs(longValue:Long? = null, arg: ArgumentObject): ArgumentObject {
+        return ArgumentObject()
+    }
+
     @CacheRemove("#key", delayMills = 2000)
     fun removeCacheDelay2s(key:String){
 

@@ -2,9 +2,12 @@ package com.labijie.caching.testing
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
+import com.labijie.caching.expression.SpELContext
+import com.labijie.caching.expression.SpELEvaluator
 import com.labijie.caching.testing.bean.SimpleTestingBean
 import com.labijie.caching.testing.configuration.TestConfiguration
 import com.labijie.caching.testing.model.ArgumentObject
+import com.labijie.caching.testing.model.MethodObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -12,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
+import kotlin.reflect.jvm.javaMethod
 import kotlin.test.BeforeTest
 
 /**
@@ -22,9 +26,8 @@ import kotlin.test.BeforeTest
 @RunWith(SpringRunner::class)
 //@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 //@DataJdbcTest
-@Import(SimpleTestingBean::class)
 @ContextConfiguration(classes = [CachingAutoConfiguration::class, TestConfiguration::class])
-class AnnotationTester(){
+class AnnotationClassBeanTester(){
 
     @Autowired
     private lateinit var simple :SimpleTestingBean
@@ -74,4 +77,15 @@ class AnnotationTester(){
         val cached4 = this.cacheManager.get(args.stringValue, ArgumentObject::class)
         Assert.assertNull(cached4)
     }
+
+    @Test
+    fun cacheAnnotationTestWithOptionalArgs(){
+        val args = ArgumentObject()
+        val r = simple.getCachedOptionalArgs(arg =  args)
+
+        val cached = this.cacheManager.get(args.stringValue, ArgumentObject::class)
+
+        Assert.assertEquals(r, cached)
+    }
+
 }

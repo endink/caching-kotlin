@@ -62,8 +62,16 @@ expireMills = 5000 indicates that the cache data will expires in 5 seconds after
 
 public interface IData {
 
-    @Cache(key="'mykey'", expireMills = 5000, region="a")
      fun getData(): Something
+}
+
+@Service
+public class Data : IData {
+
+    @Cache(key="'mykey'", expireMills = 5000, region="a")
+     fun getData(): Something {
+        //...
+     }
 }
 
 ```
@@ -75,11 +83,23 @@ SpEL was supported for key attribute and region attribute:
 
 public interface IUserService {
 
-    @Cache(key="#userId", expireMills = 5000, region="'user-' + #userId % 4")
      fun getUserById(userId: Long):User
 
-    @CacheRemove(key="#user.userId", region="'user-' + (#user.userId % 4)")
     fun updateUser(user: User)
+}
+
+@Service
+public class UserService : IUserService {
+
+    @Cache(key="#userId", expireMills = 5000, region="'user-' + #userId % 4")
+     fun getUserById(userId: Long):User{
+         //...
+     }
+
+    @CacheRemove(key="#user.userId", region="'user-' + (#user.userId % 4)")
+    fun updateUser(user: User){
+        //...
+    }
 }
 
 ```
@@ -89,12 +109,21 @@ Sliding expiration time is also easy to use:
 ```kotlin
 
 public interface ISessionService {
-
-    @Cache(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
      fun getUserSession(userId: Long):UserSession
 }
 
+public interface ISessionService {
+
+    @Cache(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
+     fun getUserSession(userId: Long):UserSession{
+        //...
+     }
+}
+
 ```
+> <font color=red>*Important:*</font>
+> Caching-kotlin will not provide the way annotations are used on the interface any more, because the annotations on the interface break the rule that the interface should not care about details of implementing, and we think caching is also a detail of the implementation
+
 
 In a nested method, you might want to prevent the cache operation. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
 
