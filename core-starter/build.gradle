@@ -6,4 +6,6 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     testCompile "org.springframework.boot:spring-boot-starter-test:$spring_boot_version"
+    testCompile "org.springframework.boot:spring-boot-starter-jdbc:$spring_boot_version"
+    testCompile "com.h2database:h2:$h2_version"
 }
