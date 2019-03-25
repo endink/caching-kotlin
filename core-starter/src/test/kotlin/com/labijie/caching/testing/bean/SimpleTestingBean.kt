@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
  * @date 2019-03-25
  */
 @Component
-class SimpleTestingBean {
+open class SimpleTestingBean {
 
     @Cache("#arg.stringValue", 30000)
     fun getCached(arg: ArgumentObject): ArgumentObject {

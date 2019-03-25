@@ -1,21 +1,19 @@
 package com.labijie.caching.testing
 
+import com.labijie.caching.CacheOperation
 import com.labijie.caching.ICacheManager
+import com.labijie.caching.cacheScope
 import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.expression.SpELContext
-import com.labijie.caching.expression.SpELEvaluator
+import com.labijie.caching.testing.bean.SimpleScopedBean
 import com.labijie.caching.testing.bean.SimpleTestingBean
 import com.labijie.caching.testing.configuration.TestConfiguration
 import com.labijie.caching.testing.model.ArgumentObject
-import com.labijie.caching.testing.model.MethodObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Import
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
-import kotlin.reflect.jvm.javaMethod
 import kotlin.test.BeforeTest
 
 /**
@@ -27,21 +25,25 @@ import kotlin.test.BeforeTest
 //@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 //@DataJdbcTest
 @ContextConfiguration(classes = [CachingAutoConfiguration::class, TestConfiguration::class])
-class AnnotationClassBeanTester(){
+class AnnotationClassBeanTester {
 
     @Autowired
-    private lateinit var simple :SimpleTestingBean
+    private lateinit var simple: SimpleTestingBean
 
     @Autowired
-    private lateinit var cacheManager:ICacheManager
+    private lateinit var scopedBean: SimpleScopedBean
+
+
+    @Autowired
+    private lateinit var cacheManager: ICacheManager
 
     @BeforeTest
-    fun init(){
+    fun init() {
         cacheManager.clear()
     }
 
     @Test
-    fun cacheAnnotationTest(){
+    fun cacheAnnotationTest() {
         val args = ArgumentObject()
         val r = simple.getCached(args)
 
@@ -53,7 +55,7 @@ class AnnotationClassBeanTester(){
     }
 
     @Test
-    fun cacheRemoveAnnotationTest(){
+    fun cacheRemoveAnnotationTest() {
         val args = ArgumentObject()
         val r = simple.getCached(args)
 
@@ -79,13 +81,30 @@ class AnnotationClassBeanTester(){
     }
 
     @Test
-    fun cacheAnnotationTestWithOptionalArgs(){
+    fun cacheAnnotationTestWithOptionalArgs() {
         val args = ArgumentObject()
-        val r = simple.getCachedOptionalArgs(arg =  args)
+        val r = simple.getCachedOptionalArgs(arg = args)
 
         val cached = this.cacheManager.get(args.stringValue, ArgumentObject::class)
 
         Assert.assertEquals(r, cached)
+    }
+
+    @Test
+    fun scopedBeanPreventGetTest() {
+        val args = ArgumentObject()
+        val r = scopedBean.getWithoutGet(args)
+
+        val cached = this.cacheManager.get(args.stringValue, ArgumentObject::class)
+        Assert.assertNotNull(r)
+        Assert.assertNull(cached)
+    }
+
+    @Test
+    fun scopeMethodPreventGetTest() {
+        cacheScope(CacheOperation.Get) {
+            val cached = simple.getCached(ArgumentObject())
+        }
     }
 
 }

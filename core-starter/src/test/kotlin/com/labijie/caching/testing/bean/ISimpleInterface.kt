@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component
  * @author Anders Xiao
  * @date 2019-03-25
  */
-@Component
 interface ISimpleInterface {
     @Cache("#arg.stringValue", 30000)
     fun getCached(arg: ArgumentObject): ArgumentObject

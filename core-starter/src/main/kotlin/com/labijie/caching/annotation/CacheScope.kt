@@ -8,7 +8,6 @@ import java.lang.annotation.Inherited
  * @author Anders Xiao
  * @date 2019-03-22
  */
-@Inherited
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 annotation class CacheScope(

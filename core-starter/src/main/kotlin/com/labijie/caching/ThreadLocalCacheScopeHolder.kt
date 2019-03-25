@@ -8,6 +8,10 @@ import com.labijie.caching.ICacheScopeHolder
  * @date 2019-03-22
  */
 class ThreadLocalCacheScopeHolder() : ICacheScopeHolder {
+    
+    init {
+        ICacheScopeHolder.Current = this
+    }
 
     private val threadSettings: ThreadLocal<ICacheScopeHolder.ScopeSettings?> = ThreadLocal()
 

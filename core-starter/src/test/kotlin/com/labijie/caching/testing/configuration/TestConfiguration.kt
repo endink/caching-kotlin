@@ -2,6 +2,7 @@ package com.labijie.caching.testing.configuration
 
 import com.labijie.caching.testing.bean.ISimpleInterface
 import com.labijie.caching.testing.bean.SimpleInterfaceImpl
+import com.labijie.caching.testing.bean.SimpleScopedBean
 import com.labijie.caching.testing.bean.SimpleTestingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,5 +25,10 @@ class TestConfiguration {
     @Bean
     fun simpleInterfaceImpl(): ISimpleInterface {
         return SimpleInterfaceImpl()
+    }
+
+    @Bean
+    fun simpleScopedBean(simple:SimpleTestingBean): SimpleScopedBean {
+        return SimpleScopedBean(simple)
     }
 }

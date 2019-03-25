@@ -30,7 +30,7 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
         val method = (joinPoint.signature as MethodSignature).method
 
         val cacheScope = method.annotations.first {
-            it.annotationClass == CacheScopeAspect::class
+            it.annotationClass == CacheScope::class
         } as CacheScope
 
         CacheScopeObject(cacheScopeHolder, *cacheScope.prevent).use {

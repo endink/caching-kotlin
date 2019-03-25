@@ -145,7 +145,7 @@ fun withoutCache(){
 or
 
 ```kotlin
-@CacheScope(prevent = CacheOperation.Get)
+@CacheScope(prevent = [CacheOperation.Get])
 fun withoutCache(){
 
     val user = userService.getUserById(123456)  

@@ -35,7 +35,7 @@ class AnnotationInterfaceBeanTester {
     }
 
     @Test
-    fun cacheAnnotationTestWithOptionalArgs(){
+    fun cacheMethod(){
         val args = ArgumentObject()
         val r = simple.getCached(arg =  args)
 

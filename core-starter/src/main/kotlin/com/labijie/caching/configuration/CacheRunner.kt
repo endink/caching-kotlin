@@ -10,6 +10,8 @@ import org.springframework.boot.CommandLineRunner
  */
 class CacheRunner(private val cacheScopeHolder: ICacheScopeHolder):CommandLineRunner {
     override fun run(vararg args: String?) {
-        ICacheScopeHolder.Current = cacheScopeHolder
+        if(ICacheScopeHolder.Current == null) {
+            ICacheScopeHolder.Current = cacheScopeHolder
+        }
     }
 }
