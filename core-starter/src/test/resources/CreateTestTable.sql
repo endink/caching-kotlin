@@ -1,8 +1,8 @@
 
-
-create table Test
+drop table test IF EXISTS;
+create table test
 (
-id int primary key not null,
+id bigint primary key not null,
 name varchar(20) null,
-type int not null
-)
+data_type int not null
+);

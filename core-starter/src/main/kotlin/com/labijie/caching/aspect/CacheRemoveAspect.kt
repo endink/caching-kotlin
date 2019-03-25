@@ -75,9 +75,8 @@ class CacheRemoveAspect(
         val cacheUsed = cacheScopeHolder.cacheRequired(CacheOperation.Remove)
 
         val returnValue = joinPoint.proceed(joinPoint.args)
-
+        val method = (joinPoint.signature as MethodSignature).method
         if(cacheUsed) {
-            val method = (joinPoint.signature as MethodSignature).method
             if (isInTransaction) {
                 TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
                     override fun afterCommit() {
@@ -86,6 +85,10 @@ class CacheRemoveAspect(
                 })
             } else {
                 removeCache(method, joinPoint.args)
+            }
+        }else{
+            if(logger.isDebugEnabled) {
+                logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.name}.${method.name}).")
             }
         }
         return returnValue
@@ -98,9 +101,18 @@ class CacheRemoveAspect(
 
         val (key, region) = this.parseKeyAndRegion(cacheRemove.key, cacheRemove.region, method, args)
 
+        if(logger.isDebugEnabled){
+            logger.debug("Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1.0)} seconds because of CacheRemove annotation" +
+                    "( method:${method.declaringClass.name}.${method.name}, cache key:$key, cache region:$region ).")
+        }
+
         this.timer.delay(cacheRemove.delayMills) {
             try {
                 this.cacheManager.remove(key, region)
+                if(logger.isDebugEnabled){
+                    logger.debug("Cache removed by CacheRemove annotation " +
+                            "( method:${method.declaringClass.name}.${method.name}, cache key:$key, cache region:$region ).")
+                }
             } catch (ex: CacheException) {
                 logger.error(
                     "Remove cache fault ( method: ${method.declaringClass.simpleName}.${method.name} ).",

@@ -36,13 +36,16 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         val cacheUsed = (method.returnType != Void::class.java) && cacheScopeHolder.cacheRequired(CacheOperation.Get)
 
         var keyAndRegion: Pair<String, String>? = null
-        val cacheGet: Cache? = if (cacheUsed) getCacheSettings(method) else null
-        if (cacheUsed && cacheGet != null) {
+        val cacheAnnotation: Cache? = if (cacheUsed) getCacheSettings(method) else null
+        if (cacheUsed && cacheAnnotation != null) {
             try {
-                keyAndRegion = parseKeyAndRegion(cacheGet.key, cacheGet.region, method, joinPoint.args)
+                keyAndRegion = parseKeyAndRegion(cacheAnnotation.key, cacheAnnotation.region, method, joinPoint.args)
                 val value = this.cacheManager.get(keyAndRegion.first, keyAndRegion.second)
                 if (value != null) {
                     if (method.returnType.isAssignableFrom(value::class.java)) {
+                        if(!logger.isDebugEnabled){
+                            logger.debug("Get data from cache, skip the method block code ( method:${method.declaringClass.name}.${method.name}, cache key:${keyAndRegion.first}, cache region:${keyAndRegion.second} ).")
+                        }
                         return value
                     } else {
                         val errorMessage =
@@ -53,24 +56,28 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
                     }
                 }
             } catch (ex: CacheException) {
-                if (cacheGet.ignoreCacheError) logger.error("Get cache fault.", ex) else throw ex
+                if (cacheAnnotation.ignoreCacheError) logger.error("Get cache fault.", ex) else throw ex
             }
         }
 
         val returnValue = joinPoint.proceed(joinPoint.args)
 
-        if (cacheUsed && returnValue != null && keyAndRegion != null && cacheGet != null) {
+        if (cacheUsed && returnValue != null && keyAndRegion != null && cacheAnnotation != null) {
             try {
                 this.cacheManager.set(
                     keyAndRegion.first,
                     data = returnValue,
-                    expireMills = cacheGet.expireMills,
-                    timePolicy = cacheGet.timePolicy,
+                    expireMills = cacheAnnotation.expireMills,
+                    timePolicy = cacheAnnotation.timePolicy,
                     region = keyAndRegion.second
                 )
             } catch (ex: CacheException) {
-                if (cacheGet.ignoreCacheError) logger.error("Set cache fault ( method: ${method.declaringClass.simpleName}.${method.name} ).", ex) else throw ex
+                if (cacheAnnotation.ignoreCacheError) logger.error("Set cache fault ( method: ${method.declaringClass.simpleName}.${method.name} ).", ex) else throw ex
             }
+        }
+
+        if(!cacheUsed && logger.isDebugEnabled){
+            logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.name}.${method.name}).")
         }
         return returnValue
     }
