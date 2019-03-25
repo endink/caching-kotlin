@@ -3,11 +3,11 @@ package com.labijie.caching.test
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.memory.MemoryCacheManager
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.Assert
+import org.junit.Test
 import java.lang.reflect.InvocationTargetException
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,13 +17,13 @@ import java.lang.reflect.InvocationTargetException
 class MemoryCacheManagerTester {
     private lateinit var memoryCache: ICacheManager
 
-    @BeforeEach
+    @BeforeTest
     @Throws(Exception::class)
     fun before() {
         this.memoryCache = this.createCache()
     }
 
-    @AfterEach
+    @AfterTest
     @Throws(Exception::class)
     fun after() {
         this.memoryCache.clear()
@@ -38,14 +38,14 @@ class MemoryCacheManagerTester {
     @Throws(Exception::class)
     fun testGet() {
 
-        Assertions.assertNull(memoryCache.get("a", "b"), "当值不存在时 get 应为 null")
-        Assertions.assertNull(memoryCache.get("b", "a"), "当值不存在时 get 应为 null")
-        Assertions.assertNull(memoryCache.get("a", ""), "当值不存在时 get 应为 null")
-        Assertions.assertNull(memoryCache.get("a", null as String?), "当值不存在时 get 应为 null")
+        Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("a", "b"))
+        Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("b", "a"))
+        Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("a", ""))
+        Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("a", null as String?))
 
         val `val` = Any()
         memoryCache.set("a", `val`, null, TimePolicy.Absolute, "b")
-        Assertions.assertEquals(`val`, memoryCache.get("a", "b"), "get 方法取到的值和 set 放入的值不一致。")
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("a", "b"))
     }
 
     /**
@@ -61,11 +61,11 @@ class MemoryCacheManagerTester {
         memoryCache.set("d", `val`, null, TimePolicy.Sliding, null)
         memoryCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
-        Assertions.assertEquals(`val`, memoryCache.get("a", "region1"), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("b", "region2"), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("c", null as String?), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("d", null as String?), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, memoryCache.get("e", ""), "get 方法取到的值和 set 放入的值不一致。")
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("a", "region1"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("b", "region2"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("c", null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("d", null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("e", ""))
     }
 
     /**
@@ -87,11 +87,11 @@ class MemoryCacheManagerTester {
         memoryCache.remove("d", null)
         memoryCache.remove("e", "")
 
-        Assertions.assertNull(memoryCache.get("a", "region1"), "remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("b", "region2"), "remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("c", null as String?), "remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("d", null as String?), "remove 方法未生效。")
-        Assertions.assertNull(memoryCache.get("e", ""), "remove 方法未生效。")
+        Assert.assertNull("remove 方法未生效。", memoryCache.get("a", "region1"))
+        Assert.assertNull("remove 方法未生效。", memoryCache.get("b", "region2"))
+        Assert.assertNull("remove 方法未生效。", memoryCache.get("c", null as String?))
+        Assert.assertNull("remove 方法未生效。", memoryCache.get("d", null as String?))
+        Assert.assertNull("remove 方法未生效。", memoryCache.get("e", ""))
     }
 
 
@@ -112,12 +112,12 @@ class MemoryCacheManagerTester {
         memoryCache.clearRegion("region1")
         memoryCache.clearRegion("region2")
 
-        Assertions.assertNull(memoryCache.get("a", "region1"), "clearRegion 方法未生效。")
-        Assertions.assertNull(memoryCache.get("b", "region2"), "clearRegion 方法未生效。")
-        Assertions.assertNotNull(memoryCache.get("c", null as String?), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(memoryCache.get("d", null as String?), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(memoryCache.get("e", ""), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(memoryCache.get("f", "region3"), "clearRegion 清除了多余的区域。")
+        Assert.assertNull("clearRegion 方法未生效。", memoryCache.get("a", "region1"))
+        Assert.assertNull("clearRegion 方法未生效。", memoryCache.get("b", "region2"))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", memoryCache.get("c", null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", memoryCache.get("d", null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", memoryCache.get("e", ""))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", memoryCache.get("f", "region3"))
     }
 
     /**
@@ -135,11 +135,11 @@ class MemoryCacheManagerTester {
 
         memoryCache.clear()
 
-        Assertions.assertNull(memoryCache.get("a", "region1"), "clear 方法未生效。")
-        Assertions.assertNull(memoryCache.get("b", "region2"), "clear 方法未生效。")
-        Assertions.assertNull(memoryCache.get("c", null as String?), "clear 方法未生效。")
-        Assertions.assertNull(memoryCache.get("d", null as String?), "clear 方法未生效。")
-        Assertions.assertNull(memoryCache.get("e", ""), "clear 方法未生效。")
+        Assert.assertNull("clear 方法未生效。", memoryCache.get("a", "region1"))
+        Assert.assertNull("clear 方法未生效。", memoryCache.get("b", "region2"))
+        Assert.assertNull("clear 方法未生效。", memoryCache.get("c", null as String?))
+        Assert.assertNull("clear 方法未生效。", memoryCache.get("d", null as String?))
+        Assert.assertNull("clear 方法未生效。", memoryCache.get("e", ""))
     }
 
     /**
@@ -154,7 +154,7 @@ class MemoryCacheManagerTester {
                 MemoryCacheManager::class.java.getDeclaredMethod("getRegionNameFormFullKey", String::class.java)
             method.isAccessible = true
             val regionName = method.invoke(memoryCache, "a|b") as String
-            Assertions.assertEquals("a", regionName)
+            Assert.assertEquals("a", regionName)
 
         } catch (e: NoSuchMethodException) {
         } catch (e: IllegalAccessException) {

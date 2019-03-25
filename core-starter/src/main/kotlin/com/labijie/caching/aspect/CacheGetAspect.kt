@@ -26,7 +26,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         val logger = LoggerFactory.getLogger(CacheGetAspect::class.java)!!
     }
 
-    @Pointcut("@annotation(io.xstar.infra.caching.annotation.Cache)")
+    @Pointcut("@annotation(com.labijie.caching.annotation.Cache)")
     private fun cacheMethod() {
     }
 

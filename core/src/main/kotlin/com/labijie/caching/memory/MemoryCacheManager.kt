@@ -18,11 +18,14 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
             return
         }
         if (region.contains("|")) {
-            throw IllegalArgumentException("Cache region name cant be contains \"|\" 。")
+            throw CacheException("Cache region name cant be contains \"|\" .")
         }
     }
 
     private fun getFullKey(region: String?, key: String): String {
+        if(key.isBlank()){
+            throw CacheException("Key cant not be empty string.")
+        }
         val r = getRegionName(region)
         return "$r|$key"
     }
@@ -83,7 +86,7 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         regionKeys.add(fullKey)
         val options = createTimeoutOptions(expireMills, timePolicy == TimePolicy.Sliding)
         options.postEvictionCallbacks.add(PostEvictionCallbackRegistration(object : IPostEvictionCallback {
-            override fun callback(key: Any, value: Any, reason: EvictionReason, state: Any) {
+            override fun callback(key: Any, value: Any, reason: EvictionReason, state: Any?) {
                 (state as MemoryCacheManager).callback(key, reason)
             }
         }, this))

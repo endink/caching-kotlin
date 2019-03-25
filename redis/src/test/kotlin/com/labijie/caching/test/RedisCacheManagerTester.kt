@@ -2,15 +2,17 @@ package com.labijie.caching.test
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
+import com.labijie.caching.memory.MemoryCacheManager
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.Assert
+import org.junit.Test
+import java.lang.reflect.InvocationTargetException
 import java.util.*
 import kotlin.random.Random
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 
 /**
  * Created with IntelliJ IDEA.
@@ -20,13 +22,13 @@ import kotlin.random.Random
 class RedisCacheManagerTester {
     private lateinit var redisCache: ICacheManager
 
-    @BeforeEach
+    @BeforeTest
     @Throws(Exception::class)
     fun before() {
         this.redisCache = this.createCache()
     }
 
-    @AfterEach
+    @AfterTest
     @Throws(Exception::class)
     fun after() {
         this.redisCache.clear()
@@ -39,6 +41,13 @@ class RedisCacheManagerTester {
         redisConfig.regions.add(RedisRegionOptions("region2",url = "${TestingServer.serverUri}/2"))
         redisConfig.regions.add(RedisRegionOptions("region3",url = "${TestingServer.serverUri}/3"))
 
+        redisConfig.regions.add(RedisRegionOptions("a",url = "${TestingServer.serverUri}/4"))
+        redisConfig.regions.add(RedisRegionOptions("b",url = "${TestingServer.serverUri}/5"))
+        redisConfig.regions.add(RedisRegionOptions("c",url = "${TestingServer.serverUri}/6"))
+        redisConfig.regions.add(RedisRegionOptions("d",url = "${TestingServer.serverUri}/7"))
+        redisConfig.regions.add(RedisRegionOptions("e",url = "${TestingServer.serverUri}/8"))
+        redisConfig.regions.add(RedisRegionOptions("f",url = "${TestingServer.serverUri}/9"))
+
         return RedisCacheManager(redisConfig)
     }
 
@@ -49,15 +58,14 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testGet() {
 
-        Assertions.assertNull(redisCache.get("a", "region1"), "当值不存在时 get 应为 null")
-        Assertions.assertNull(redisCache.get("b", "region2"), "当值不存在时 get 应为 null")
-        Assertions.assertNull(redisCache.get("a", ""), "当值不存在时 get 应为 null")
-        Assertions.assertNull(redisCache.get("a", null), "当值不存在时 get 应为 null")
+        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", "b"))
+        Assert.assertNull( "当值不存在时 get 应为 null", redisCache.get("b", "a"))
+        Assert.assertNull("当值不存在时 get 应为 null",redisCache.get("a", ""))
+        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", null as String?))
 
         val `val` = TestData()
-        redisCache.set("a", `val`, null, TimePolicy.Absolute, "region2")
-        val saved = redisCache.get("a", "region2")
-        Assertions.assertEquals(`val`, saved, "get 方法取到的值和 set 放入的值不一致。")
+        redisCache.set("a", `val`, null, TimePolicy.Absolute, "b")
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", "b"))
     }
 
     /**
@@ -69,15 +77,15 @@ class RedisCacheManagerTester {
         val `val` = TestData()
         redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
         redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
-        redisCache.set("c", `val`, 5000L, TimePolicy.Absolute, null)
+        redisCache.set("c", `val`, 5000L, TimePolicy.Sliding, null)
         redisCache.set("d", `val`, null, TimePolicy.Sliding, null)
         redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
-        Assertions.assertEquals(`val`, redisCache.get("a", "region1"), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, redisCache.get("b", "region2"), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, redisCache.get("c", null as String?), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, redisCache.get("d", null as String?), "get 方法取到的值和 set 放入的值不一致。")
-        Assertions.assertEquals(`val`, redisCache.get("e", ""), "get 方法取到的值和 set 放入的值不一致。")
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", "region1"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("b", "region2"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("c", null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("d", null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("e", ""))
     }
 
     /**
@@ -99,11 +107,11 @@ class RedisCacheManagerTester {
         redisCache.remove("d", null)
         redisCache.remove("e", "")
 
-        Assertions.assertNull(redisCache.get("a", "region1"), "remove 方法未生效。")
-        Assertions.assertNull(redisCache.get("b", "region2"), "remove 方法未生效。")
-        Assertions.assertNull(redisCache.get("c", null as String?), "remove 方法未生效。")
-        Assertions.assertNull(redisCache.get("d", null as String?), "remove 方法未生效。")
-        Assertions.assertNull(redisCache.get("e", ""), "remove 方法未生效。")
+        Assert.assertNull("remove 方法未生效。", redisCache.get("a", "region1"))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("b", "region2"))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("c", null as String?))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("d", null as String?))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("e", ""))
     }
 
 
@@ -116,7 +124,7 @@ class RedisCacheManagerTester {
         val `val` = TestData()
         redisCache.set("a", `val`, null, TimePolicy.Absolute, "region1")
         redisCache.set("b", `val`, 5000L, TimePolicy.Absolute, "region2")
-        redisCache.set("c", `val`, 5000L, TimePolicy.Absolute)
+        redisCache.set("c", `val`, 5000L, TimePolicy.Sliding)
         redisCache.set("d", `val`, null, TimePolicy.Sliding)
         redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
         redisCache.set("f", `val`, 5000L, TimePolicy.Absolute, "region3")
@@ -124,12 +132,12 @@ class RedisCacheManagerTester {
         redisCache.clearRegion("region1")
         redisCache.clearRegion("region2")
 
-        Assertions.assertNull(redisCache.get("a", "region1"), "clearRegion 方法未生效。")
-        Assertions.assertNull(redisCache.get("b", "region2"), "clearRegion 方法未生效。")
-        Assertions.assertNotNull(redisCache.get("c", null as String?), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(redisCache.get("d", null as String?), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(redisCache.get("e", ""), "clearRegion 清除了多余的区域。")
-        Assertions.assertNotNull(redisCache.get("f", "region3"), "clearRegion 清除了多余的区域。")
+        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("a", "region1"))
+        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("b", "region2"))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("c", null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("d", null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("e", ""))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("f", "region3"))
     }
 
     /**
@@ -147,11 +155,11 @@ class RedisCacheManagerTester {
 
         redisCache.clear()
 
-        Assertions.assertNull(redisCache.get("a", "region1"), "clear 方法未生效。")
-        Assertions.assertNull(redisCache.get("b", "region2"), "clear 方法未生效。")
-        Assertions.assertNull(redisCache.get("c", null as String?), "clear 方法未生效。")
-        Assertions.assertNull(redisCache.get("d", null as String?), "clear 方法未生效。")
-        Assertions.assertNull(redisCache.get("e", ""), "clear 方法未生效。")
+        Assert.assertNull("clear 方法未生效。", redisCache.get("a", "region1"))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("b", "region2"))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("c", null as String?))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("d", null as String?))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("e", ""))
     }
 
     private data class TestData(

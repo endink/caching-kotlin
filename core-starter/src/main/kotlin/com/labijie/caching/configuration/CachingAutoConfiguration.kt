@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Configuration
 class CachingAutoConfiguration {
 
     @Configuration
-    @ConditionalOnBean(ICacheManager::class)
+    @ConditionalOnMissingBean(ICacheManager::class)
     protected class MemoryCacheAutoConfiguration {
 
         @Bean

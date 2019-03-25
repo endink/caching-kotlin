@@ -4,4 +4,6 @@ dependencies {
     compile "org.springframework:spring-tx:$spring_version"
     compile "io.netty:netty-common:$netty_version"
     compile "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
+    testCompile "org.springframework.boot:spring-boot-starter-test:$spring_boot_version"
 }

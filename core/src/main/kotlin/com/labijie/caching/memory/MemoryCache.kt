@@ -1,5 +1,6 @@
 package com.labijie.caching.memory
 
+import com.labijie.caching.CacheException
 import com.labijie.caching.CacheItemPriority
 import com.labijie.caching.EvictionReason
 import com.labijie.caching.IChangeToken
@@ -39,7 +40,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
 
     private fun checkClosed() {
         if (closed) {
-            throw RuntimeException("memory cache was closed.")
+            throw CacheException("memory cache was closed.")
         }
     }
 
@@ -134,7 +135,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
 
     fun <T> set(key: Any, value: T, slidingExpirationMilliseconds: Long): T {
         if (slidingExpirationMilliseconds <= 0) {
-            throw IllegalArgumentException("slidingExpirationMilliseconds must greater than 0")
+            throw CacheException("slidingExpirationMilliseconds must greater than 0")
         }
         var options = MemoryCacheEntryOptions()
         options.slidingExpirationMilliseconds = slidingExpirationMilliseconds
@@ -256,7 +257,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
                     CacheItemPriority.High -> highPriEntries.add(entry)
                     CacheItemPriority.NeverRemove -> {
                     }
-                    else -> throw RuntimeException("Not implemented: " + entry.priority!!)
+                    else -> throw CacheException("Not implemented: " + entry.priority!!)
                 }
             }
         }

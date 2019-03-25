@@ -149,7 +149,7 @@ class CacheEntry
      * @param reason 过期原因。
      */
     fun setExpired(reason: EvictionReason) {
-        if (this.evictionReason === EvictionReason.None) {
+        if (this.evictionReason != EvictionReason.None) {
             this.evictionReason = reason
         }
         this.isExpired = true
@@ -304,7 +304,7 @@ class CacheEntry
             for (registration in callbackRegistrations) {
                 val callback = registration.evictionCallback
                 try {
-                    callback.callback(entry.key, entry.value!!, entry.evictionReason!!, registration.state!!)
+                    callback.callback(entry.key, entry.value!!, entry.evictionReason!!, registration.state)
                 } catch (e: Throwable) {
                     logger.warn("call back fault.", e)
                 }

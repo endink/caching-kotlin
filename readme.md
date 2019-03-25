@@ -55,7 +55,7 @@ dependencies {
 }
 ```
 
-Declare method cache using @Cached annotation.
+Declare method cache using @Cache annotation.
 expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.
 
 ```kotlin

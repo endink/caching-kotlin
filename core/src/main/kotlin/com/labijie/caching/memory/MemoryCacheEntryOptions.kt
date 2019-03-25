@@ -1,5 +1,6 @@
 package com.labijie.caching.memory
 
+import com.labijie.caching.CacheException
 import com.labijie.caching.CacheItemPriority
 import com.labijie.caching.IChangeToken
 import com.labijie.caching.PostEvictionCallbackRegistration
@@ -26,7 +27,7 @@ class MemoryCacheEntryOptions {
     var slidingExpirationMilliseconds: Long? = null
         set(milliseconds) {
             if (milliseconds != null && milliseconds.toLong() <= 0) {
-                throw IllegalArgumentException("MemoryCacheEntryOptions 滑动过期时间 slidingExpirationMilliseconds 必须为空大于 0。")
+                throw CacheException("The slidingExpirationMilliseconds for memory cache must be null or greater than 0")
             }
             field = milliseconds
         }
@@ -52,7 +53,7 @@ class MemoryCacheEntryOptions {
      */
     fun setAbsoluteExpirationRelativeToNow(milliseconds: Long?) {
         if (milliseconds != null && milliseconds.toInt() <= 0) {
-            throw IllegalArgumentException("milliseconds must be greater than 0 or null.")
+            throw CacheException("The milliseconds must be greater than 0 or null.")
         }
         if (milliseconds == null) {
             this.absoluteExpiration = null

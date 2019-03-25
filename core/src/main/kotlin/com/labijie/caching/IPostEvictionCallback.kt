@@ -7,5 +7,5 @@ package com.labijie.caching
  */
 @FunctionalInterface
 interface IPostEvictionCallback {
-    fun callback(key: Any, value: Any, reason: EvictionReason, state: Any)
+    fun callback(key: Any, value: Any, reason: EvictionReason, state: Any?)
 }

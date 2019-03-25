@@ -22,7 +22,7 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
     }
 
 
-    @Pointcut("@annotation(io.xstar.infra.caching.annotation.CacheScope)")
+    @Pointcut("@annotation(com.labijie.caching.annotation.CacheScope)")
     private fun cacheScopeMethod(){}
 
     @Around("cacheScopeMethod()")

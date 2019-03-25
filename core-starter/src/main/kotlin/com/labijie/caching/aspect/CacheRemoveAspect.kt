@@ -12,6 +12,7 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.transaction.IllegalTransactionStateException
@@ -34,34 +35,38 @@ class CacheRemoveAspect(
     private val timer:IDelayTimer
 ) :
     CacheAspectBase(cacheScopeHolder), ApplicationContextAware {
-
-    private lateinit var applicationContext: ApplicationContext
     private var transactionManager: PlatformTransactionManager? = null
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
-        this.applicationContext = applicationContext
+        this.transactionManager = try {
+            applicationContext.getBean(PlatformTransactionManager::class.java)
+        }catch (e: NoSuchBeanDefinitionException){
+            null
+        }
     }
 
     companion object {
         val logger = LoggerFactory.getLogger(CacheRemoveAspect::class.java)!!
     }
 
-    @Pointcut("@annotation(io.xstar.infra.caching.annotation.CacheRemove)")
+    @Pointcut("@annotation(com.labijie.caching.annotation.CacheRemove)")
     private fun cacheRemoveMethod() {
     }
 
     private val isInTransaction: Boolean
         get() {
-            this.transactionManager = transactionManager ?:
-                    this.applicationContext.getBean(PlatformTransactionManager::class.java)
-            val def = DefaultTransactionDefinition()
-            def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
+            if(this.transactionManager != null) {
+                val def = DefaultTransactionDefinition()
+                def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
 
-            return try {
-                val status = this.transactionManager!!.getTransaction(def)
-                !status.isCompleted && !status.isRollbackOnly
-            } catch (ex: IllegalTransactionStateException) {
-                false
+                return try {
+                    val status = this.transactionManager!!.getTransaction(def)
+                    !status.isCompleted && !status.isRollbackOnly
+                } catch (ex: IllegalTransactionStateException) {
+                    false
+                }
+            }else{
+                return false
             }
         }
 
@@ -76,22 +81,22 @@ class CacheRemoveAspect(
             if (isInTransaction) {
                 TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
                     override fun afterCommit() {
-                        removeCache(method)
+                        removeCache(method, joinPoint.args)
                     }
                 })
             } else {
-                removeCache(method)
+                removeCache(method, joinPoint.args)
             }
         }
         return returnValue
     }
 
-    private fun removeCache(method: Method) {
+    private fun removeCache(method: Method, args: Array<Any?>) {
         val cacheRemove = method.annotations.first {
             it.annotationClass == CacheRemove::class
         } as CacheRemove
 
-        val (key, region) = this.parseKeyAndRegion(cacheRemove.key, cacheRemove.region, method)
+        val (key, region) = this.parseKeyAndRegion(cacheRemove.key, cacheRemove.region, method, args)
 
         this.timer.delay(cacheRemove.delayMills) {
             try {
