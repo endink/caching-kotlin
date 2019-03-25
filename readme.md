@@ -121,8 +121,10 @@ public interface ISessionService {
 }
 
 ```
-> <font color=red>*Important:*</font>
-> Caching-kotlin will not provide the way annotations are used on the interface any more, because the annotations on the interface break the rule that the interface should not care about details of implementing, and we think caching is also a detail of the implementation
+>:bell:**Important:**
+>
+> Caching-kotlin will not provide the way annotations are used on the interface method any more, because the annotations on the interface break the rule that the interface should not care about details of implementing, and we think caching is also a detail of the implementation.
+>So, all @CacheXXX have to annotation on implement class method
 
 
 In a nested method, you might want to prevent the cache operation. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
