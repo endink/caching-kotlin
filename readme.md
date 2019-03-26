@@ -46,7 +46,7 @@ memoryCache.get("a")
 
 ```
 
-## Spring Integration
+## Spring Integration (Memory cache)
 
 import package:
 ```groovy
@@ -153,6 +153,47 @@ fun withoutCache(){
 }
 
 ```
+
+## Spring Integration ( Redis )
+
+import package:
+```groovy
+dependencies {
+    compile "com.labijie:caching-kotlin-redis-starter:1.0"
+}
+```
+
+The Redis cache supports multiple regions, different regions can be different Redis db, or they can be different Redis server.
+
+The following example shows the Redis configuration with two regions ( region1, region2 ):
+
+```groovy
+infra:
+  caching:
+    redis:
+      regions:
+        region1:
+          url: redis://localhost:6379/1
+        region2:
+          url: redis://localhost:6379/2
+```
+The Redis cache also supports the master-slave redis servers (region name: default):
+
+```groovy
+
+infra:
+  caching:
+    redis:
+      regions:
+        default: 
+          url: redis://host1:6379, redis://host2:6379, redis://host3:6379
+
+```
+
+> Current version read preferred from slaves and fall back to master if no slave is not available by default.
+> Specified operation to read master will be supported in the future but not now ..
+
+.
 
 
 

@@ -4,6 +4,4 @@ infra:
     redis:
       regions:
         region1:
-          url:
-        region2:
-          url: redis://localhost:6379/0
+          url: redis://host1:6379, redis://host2:6379, redis://host3:6379
