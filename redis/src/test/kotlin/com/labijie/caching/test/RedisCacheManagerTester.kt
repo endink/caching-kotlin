@@ -36,17 +36,17 @@ class RedisCacheManagerTester {
 
     protected fun createCache(): RedisCacheManager {
         val redisConfig = RedisCacheConfig()
-        redisConfig.regions.add(RedisRegionOptions("default", url = "${TestingServer.serverUri}/0"))
-        redisConfig.regions.add(RedisRegionOptions("region1",url = "${TestingServer.serverUri}/1"))
-        redisConfig.regions.add(RedisRegionOptions("region2",url = "${TestingServer.serverUri}/2"))
-        redisConfig.regions.add(RedisRegionOptions("region3",url = "${TestingServer.serverUri}/3"))
+        redisConfig.regions["default"] = RedisRegionOptions(url = "${TestingServer.serverUri}/0")
+        redisConfig.regions["region1"] = RedisRegionOptions(url = "${TestingServer.serverUri}/1")
+        redisConfig.regions["region2"] = RedisRegionOptions(url = "${TestingServer.serverUri}/2")
+        redisConfig.regions["region3"] = RedisRegionOptions(url = "${TestingServer.serverUri}/3")
 
-        redisConfig.regions.add(RedisRegionOptions("a",url = "${TestingServer.serverUri}/4"))
-        redisConfig.regions.add(RedisRegionOptions("b",url = "${TestingServer.serverUri}/5"))
-        redisConfig.regions.add(RedisRegionOptions("c",url = "${TestingServer.serverUri}/6"))
-        redisConfig.regions.add(RedisRegionOptions("d",url = "${TestingServer.serverUri}/7"))
-        redisConfig.regions.add(RedisRegionOptions("e",url = "${TestingServer.serverUri}/8"))
-        redisConfig.regions.add(RedisRegionOptions("f",url = "${TestingServer.serverUri}/9"))
+        redisConfig.regions["a"] = RedisRegionOptions(url = "${TestingServer.serverUri}/4")
+        redisConfig.regions["b"] = RedisRegionOptions(url = "${TestingServer.serverUri}/5")
+        redisConfig.regions["c"] = RedisRegionOptions(url = "${TestingServer.serverUri}/6")
+        redisConfig.regions["d"] = RedisRegionOptions(url = "${TestingServer.serverUri}/7")
+        redisConfig.regions["e"] = RedisRegionOptions(url = "${TestingServer.serverUri}/8")
+        redisConfig.regions["f"] = RedisRegionOptions(url = "${TestingServer.serverUri}/9")
 
         return RedisCacheManager(redisConfig)
     }

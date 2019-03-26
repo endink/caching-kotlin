@@ -1,5 +1,7 @@
 package com.labijie.caching.redis
 
+import com.labijie.caching.CacheException
+
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao
@@ -8,7 +10,7 @@ package com.labijie.caching.redis
 object CacheDataSerializerRegistry {
     private val serializers: MutableMap<String, ICacheDataSerializer> = mutableMapOf()
     init {
-        this.registerSerializer(JacksonCacheDataSerializer.NAME, JacksonCacheDataSerializer())
+        this.registerSerializer(JacksonCacheDataSerializer())
     }
 
     fun getSerializer(serializerName: String): ICacheDataSerializer {
@@ -16,7 +18,10 @@ object CacheDataSerializerRegistry {
             ?: throw RuntimeException("Cant find cache data serializer with name '$serializerName'")
     }
 
-    fun registerSerializer(serializerName: String, serializer: ICacheDataSerializer) {
-        this.serializers[serializerName] = serializer
+    fun registerSerializer(serializer: ICacheDataSerializer) {
+        if(serializer.name.isBlank()){
+            throw CacheException("${ICacheDataSerializer::class.java.simpleName} name must not be null or empty string.")
+        }
+        this.serializers[serializer.name] = serializer
     }
 }

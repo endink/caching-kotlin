@@ -1,0 +1,22 @@
+{
+  "group": [
+    {
+      "name": "infra.caching.memory",
+      "type": "com.labijie.caching.memory.MemoryCacheOptions"
+    }
+  ],
+  "properties": [
+    {
+      "name": "infra.caching.memory.scanFrequency",
+      "type": "java.time.Duration",
+      "defaultValue": "30s",
+      "description": "frequency of background expired scan thread"
+    },
+    {
+      "name":"infra.caching.memory.isCompact",
+      "type": "java.lang.Boolean",
+      "defaultValue": false,
+      "description": "auto compact memory"
+    }
+  ]
+}

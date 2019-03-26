@@ -1,11 +1,12 @@
 package com.labijie.caching.aspect
 
 import com.labijie.caching.CacheException
-import com.labijie.caching.ICacheManager
 import com.labijie.caching.CacheOperation
+import com.labijie.caching.ICacheManager
 import com.labijie.caching.ICacheScopeHolder
 import com.labijie.caching.annotation.CacheRemove
 import com.labijie.caching.component.IDelayTimer
+import com.labijie.caching.component.ITransactionInjection
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -15,11 +16,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
-import org.springframework.transaction.IllegalTransactionStateException
 import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.TransactionDefinition
-import org.springframework.transaction.TransactionStatus
-import org.springframework.transaction.support.DefaultTransactionDefinition
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.lang.reflect.Method
@@ -33,7 +30,8 @@ import java.lang.reflect.Method
 class CacheRemoveAspect(
     private val cacheManager: ICacheManager,
     cacheScopeHolder: ICacheScopeHolder,
-    private val timer:IDelayTimer
+    private val timer:IDelayTimer,
+    private val transactionInjection: ITransactionInjection
 ) :
     CacheAspectBase(cacheScopeHolder), ApplicationContextAware {
     private var transactionManager: PlatformTransactionManager? = null
@@ -54,23 +52,6 @@ class CacheRemoveAspect(
     private fun cacheRemoveMethod() {
     }
 
-    private val isInTransaction: Boolean
-        get() {
-            if(this.transactionManager != null) {
-                val def = DefaultTransactionDefinition()
-                def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
-
-                return try {
-                    this.transactionManager!!.getTransaction(def)
-                    return true
-                } catch (ex: IllegalTransactionStateException) {
-                    false
-                }
-            }else{
-                return false
-            }
-        }
-
     @Around("cacheRemoveMethod()")
     fun aroundScope(joinPoint: ProceedingJoinPoint): Any? {
         val cacheUsed = cacheScopeHolder.cacheRequired(CacheOperation.Remove)
@@ -78,12 +59,8 @@ class CacheRemoveAspect(
         val returnValue = joinPoint.proceed(joinPoint.args)
         val method = (joinPoint.signature as MethodSignature).method
         if(cacheUsed) {
-            if (isInTransaction) {
-                TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-                    override fun afterCommit() {
-                        removeCache(method, joinPoint.args)
-                    }
-                })
+            if (transactionInjection.isInTransaction) {
+                transactionInjection.hookTransaction { removeCache(method, joinPoint.args) }
             } else {
                 removeCache(method, joinPoint.args)
             }

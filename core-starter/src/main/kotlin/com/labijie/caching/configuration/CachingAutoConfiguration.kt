@@ -1,20 +1,24 @@
 package com.labijie.caching.configuration
 
 import com.labijie.caching.ICacheManager
-import com.labijie.caching.memory.MemoryCacheManager
-import com.labijie.caching.memory.MemoryCacheOptions
 import com.labijie.caching.ICacheScopeHolder
+import com.labijie.caching.ThreadLocalCacheScopeHolder
 import com.labijie.caching.aspect.CacheGetAspect
 import com.labijie.caching.aspect.CacheRemoveAspect
 import com.labijie.caching.aspect.CacheScopeAspect
-import com.labijie.caching.ThreadLocalCacheScopeHolder
-import com.labijie.caching.component.HashedWheelDelayTimer
-import com.labijie.caching.component.IDelayTimer
+import com.labijie.caching.component.*
+import com.labijie.caching.memory.MemoryCacheManager
+import com.labijie.caching.memory.MemoryCacheOptions
+import org.springframework.boot.autoconfigure.AutoConfigureAfter
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Import
+import org.springframework.transaction.PlatformTransactionManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,6 +26,7 @@ import org.springframework.context.annotation.Configuration
  * @date 2019-03-22
  */
 @Configuration
+@Import(JdbcCachingAutoConfiguration::class)
 class CachingAutoConfiguration {
 
     @Configuration
@@ -49,8 +54,14 @@ class CachingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IDelayTimer::class)
-    fun hashedWheelDelayTimer():HashedWheelDelayTimer{
+    fun hashedWheelDelayTimer(): HashedWheelDelayTimer {
         return HashedWheelDelayTimer()
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(ITransactionInjection::class)
+    fun noopTransactionInjection(): NoopTransactionInjection {
+        return NoopTransactionInjection()
     }
 
     @Bean
@@ -67,6 +78,6 @@ class CachingAutoConfiguration {
         CacheGetAspect(cacheManager, cacheScopeHolder)
 
     @Bean
-    fun cacheRemoveAspect(cacheManager: ICacheManager, cacheScopeHolder: ICacheScopeHolder, delayTimer: IDelayTimer) =
-        CacheRemoveAspect(cacheManager, cacheScopeHolder, delayTimer)
+    fun cacheRemoveAspect(transactionInjection: ITransactionInjection, cacheManager: ICacheManager, cacheScopeHolder: ICacheScopeHolder, delayTimer: IDelayTimer) =
+        CacheRemoveAspect(cacheManager, cacheScopeHolder, delayTimer, transactionInjection)
 }

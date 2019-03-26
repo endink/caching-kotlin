@@ -1,0 +1,9 @@
+
+infra:
+  caching:
+    redis:
+      regions:
+        region1:
+          url:
+        region2:
+          url: redis://localhost:6379/0

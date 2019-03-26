@@ -1,0 +1,20 @@
+{
+  "group": [
+    {
+      "name": "infra.caching.redis",
+      "type": "com.labijie.caching.redis.configuration.RedisCacheConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "infra.caching.redis.defaultRegion",
+      "type": "java.lang.String",
+      "description": "default region for redis caching"
+    },
+    {
+      "name":"infra.caching.redis.regions",
+      "type": "java.util.Map<java.lang.String, com.labijie.caching.redis.configuration.RedisRegionOptions>",
+      "description": "redis cache regions"
+    }
+  ]
+}

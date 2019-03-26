@@ -183,3 +183,7 @@ subprojects {
         }
     }
 }
+
+dependencies {
+    compile project(":redis-starter")
+}

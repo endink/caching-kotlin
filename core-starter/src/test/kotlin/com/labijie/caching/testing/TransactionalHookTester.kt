@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.jdbc.JdbcTestUtils
+import org.springframework.transaction.UnexpectedRollbackException
 import java.lang.RuntimeException
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -123,7 +124,11 @@ class TransactionalHookTester {
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
         Assert.assertEquals(data, cached)
 
-        transactionalBean.transactionRollback(data.id)
+        try {
+            transactionalBean.transactionRollback(data.id)
+        }catch (ex:UnexpectedRollbackException){
+
+        }
         Thread.sleep(3000)
         val existed = cacheManager.get(data.id.toString(), TestEntity::class)
         Assert.assertEquals(cached, existed)

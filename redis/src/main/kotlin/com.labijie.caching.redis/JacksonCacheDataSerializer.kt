@@ -16,6 +16,8 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
     }
 
+    override val name: String = NAME
+
     private val jacksonMapper: ObjectMapper = mapper ?: ObjectMapper()
 
 

@@ -4,14 +4,15 @@ import com.labijie.caching.CacheException
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.configuration.RedisCacheConfig
-import io.lettuce.core.KeyValue
-import io.lettuce.core.RedisClient
-import io.lettuce.core.RedisException
-import io.lettuce.core.ScriptOutputType
+import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
+import io.lettuce.core.codec.Utf8StringCodec
+import io.lettuce.core.masterslave.MasterSlave
+import io.lettuce.core.masterslave.StatefulRedisMasterSlaveConnection
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -59,24 +60,46 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
         val name = if (region.isNullOrBlank()) redisConfig.defaultRegion.trim() else region.trim()
         val config = if (name.isBlank()) {
-            redisConfig.regions.first()
+            redisConfig.regions.values.first()
         } else {
-            redisConfig.regions.firstOrNull { r -> r.name == name }
+            redisConfig.regions.getOrDefault(name, null)
                 ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
         val r = if (name.isBlank()) NULL_REGION_NAME else name
         val client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
-            val c = RedisClient.create(config.url)
-            val connection = c.connect()
+            val (cli, conn) = createClientAndConnection(config.url)
 
             val n = if (region.isNullOrBlank()) "" else region
-            RedisClientInternal(n, connection, c, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
+            RedisClientInternal(n, conn, cli, config.serializer.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
-            client.client.shutdown()
+            client.close()
         }
         return c
+    }
+
+    fun createClientAndConnection(url: String): Pair<RedisClient, StatefulRedisConnection<String, String>> {
+        if (url.isBlank()) {
+            throw RedisException("Redis url cant not be null or empty string.")
+        }
+        val urls = url.split(",")
+        if (urls.size <= 1) {
+            val c = RedisClient.create(url)
+            val connection = c.connect()
+            return Pair(c, connection)
+        } else {
+            val redisUrls = urls.map {
+                RedisURI.create(it.trim())
+            }
+            val client = RedisClient.create()
+            val connection = MasterSlave.connect(
+                client, Utf8StringCodec(),
+                redisUrls
+            )
+            connection.readFrom = ReadFrom.SLAVE_PREFERRED
+            return Pair(client, connection)
+        }
     }
 
     private fun List<KeyValue<String, String>>.toMap(): Map<String, String> {
