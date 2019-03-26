@@ -23,7 +23,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
     CacheAspectBase(cacheScopeHolder) {
 
     companion object {
-        val logger = LoggerFactory.getLogger(CacheGetAspect::class.java)!!
+        val logger = LoggerFactory.getLogger("xxx.xxx.xxx.xx")!!
     }
 
     @Pointcut("@annotation(com.labijie.caching.annotation.Cache)")

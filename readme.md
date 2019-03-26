@@ -49,11 +49,22 @@ memoryCache.get("a")
 ## Spring Integration (Memory cache)
 
 import package:
+
+for memory:
 ```groovy
 dependencies {
     compile "com.labijie:caching-kotlin-core-starter:1.0"
 }
 ```
+
+for redis:
+
+```groovy
+dependencies {
+    compile "com.labijie:caching-kotlin-redis-starter:1.0"
+}
+```
+
 
 Declare method cache using @Cache annotation.
 expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.
@@ -154,16 +165,11 @@ fun withoutCache(){
 
 ```
 
-## Spring Integration ( Redis )
+### Work with Redis
 
-import package:
-```groovy
-dependencies {
-    compile "com.labijie:caching-kotlin-redis-starter:1.0"
-}
-```
+#### Configuration
 
-The Redis cache supports multiple regions, different regions can be different Redis db, or they can be different Redis server.
+The redis cache supports multiple regions, different regions can be different redis db, or they can be different redis server.
 
 The following example shows the Redis configuration with two regions ( region1, region2 ):
 
@@ -195,7 +201,47 @@ Since we use lettuce as a redis client, the URLs in all of the above examples ar
 > Current version read preferred from slaves and fall back to master if no slave is not available by default.
 > Specified operation to read master will be supported in the future but not now ..
 
-.
+#### Redis Data Serializer
+
+Jackson is used as a serializer by default in the redis implementation, so the objects you want to cache must can be serialized and deserialized by Jackson (for example, it must contains a none args constructor).
+
+Caching-kotlin also provide the ability to customize serializer:
+
+```kotlin
+@Component
+class KryoSerializer : ICacheDataSerializer {
+    override val name: String = "kryo"
+    
+    override fun serializeData(data: Any): String {
+        //...
+    }
+
+    override fun <T : Any> deserializeData(type: KClass<T>, data: String): T? {
+        //...
+    }
+}
+```
+A serializer has only 2 conditions: 
+1. It must be an implement of ICacheDataSerializer interface
+2. It must be a Spring bean
+
+> Caching-kotlin will automatically load all beans that implement the ICacheDataSerializer interface,
+> they will be auto registered when application startup.
+
+After you define a serializer, you can use it like follow:
+
+```groovy
+
+infra:
+  caching:
+    redis:
+      regions:
+        default: 
+          url: redis://localhost:6379
+          serializer: kryo
+
+```
+
 
 
 
