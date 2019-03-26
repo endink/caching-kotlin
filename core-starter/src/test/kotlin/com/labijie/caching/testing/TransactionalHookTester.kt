@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.test.jdbc.JdbcTestUtils
+import java.lang.RuntimeException
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,12 +47,13 @@ class TransactionalHookTester {
     @BeforeTest
     fun init() {
         cacheManager.clear()
-        val sql = this::class.java.classLoader.getResourceAsStream("CreateTestTable.sql").readBytes().toString(Charsets.UTF_8)
+        val sql =
+            this::class.java.classLoader.getResourceAsStream("CreateTestTable.sql").readBytes().toString(Charsets.UTF_8)
         jdbcTemplate.execute(sql)
     }
 
     @Test
-    fun cacheGet(){
+    fun cacheGet() {
         val data = TestEntity()
         transactionalBean.insert(data)
 
@@ -65,5 +67,65 @@ class TransactionalHookTester {
 
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
         Assert.assertEquals(data, cached)
+    }
+
+    @Test
+    fun cacheRemove() {
+        val data = TestEntity()
+        transactionalBean.insert(data)
+
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+
+        transactionalBean.getCached(data.id)
+        val cached = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertEquals(data, cached)
+
+        val count = transactionalBean.removeCacheDelay2s(data.id)
+
+        Assert.assertEquals(1, count)
+        var existed = cacheManager.get(data.id.toString(), TestEntity::class)
+
+        Assert.assertNotNull(existed)
+
+        Thread.sleep(3000)
+        existed = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertNull(existed)
+
+        val result = transactionalBean.getCached(data.id)
+        Assert.assertNull(result)
+    }
+
+    @Test
+    fun noTransaction() {
+        val data = TestEntity()
+        transactionalBean.insert(data)
+
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+
+        transactionalBean.getCached(data.id)
+        val cached = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertEquals(data, cached)
+
+        transactionalBean.noTransaction(data.id)
+        Thread.sleep(3000)
+        val existed = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertNull(existed)
+    }
+
+    @Test
+    fun transactionRollback() {
+        val data = TestEntity()
+        transactionalBean.insert(data)
+
+        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+
+        transactionalBean.getCached(data.id)
+        val cached = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertEquals(data, cached)
+
+        transactionalBean.transactionRollback(data.id)
+        Thread.sleep(3000)
+        val existed = cacheManager.get(data.id.toString(), TestEntity::class)
+        Assert.assertEquals(cached, existed)
     }
 }

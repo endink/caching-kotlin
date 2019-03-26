@@ -77,7 +77,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         }
 
         if(!cacheUsed && logger.isDebugEnabled){
-            logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.name}.${method.name}).")
+            logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.simpleName}.${method.name}).")
         }
         return returnValue
     }

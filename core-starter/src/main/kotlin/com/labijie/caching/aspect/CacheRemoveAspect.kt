@@ -18,6 +18,7 @@ import org.springframework.context.ApplicationContextAware
 import org.springframework.transaction.IllegalTransactionStateException
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.TransactionDefinition
+import org.springframework.transaction.TransactionStatus
 import org.springframework.transaction.support.DefaultTransactionDefinition
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
@@ -60,8 +61,8 @@ class CacheRemoveAspect(
                 def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
 
                 return try {
-                    val status = this.transactionManager!!.getTransaction(def)
-                    !status.isCompleted && !status.isRollbackOnly
+                    this.transactionManager!!.getTransaction(def)
+                    return true
                 } catch (ex: IllegalTransactionStateException) {
                     false
                 }
@@ -88,7 +89,7 @@ class CacheRemoveAspect(
             }
         }else{
             if(logger.isDebugEnabled) {
-                logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.name}.${method.name}).")
+                logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.simpleName}.${method.name}).")
             }
         }
         return returnValue
@@ -102,16 +103,25 @@ class CacheRemoveAspect(
         val (key, region) = this.parseKeyAndRegion(cacheRemove.key, cacheRemove.region, method, args)
 
         if(logger.isDebugEnabled){
-            logger.debug("Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1.0)} seconds because of CacheRemove annotation" +
-                    "( method:${method.declaringClass.name}.${method.name}, cache key:$key, cache region:$region ).")
+            logger.debug("Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1000.0)} seconds because of CacheRemove annotation" +
+                    "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
         }
 
-        this.timer.delay(cacheRemove.delayMills) {
+        val delayMills = if(cacheRemove.delayMills < 500){
+            if(logger.isDebugEnabled){
+                logger.debug("${CacheRemove::class.java.simpleName} delay must be greater than 500ms, if not will be set to 500" +
+                        "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
+            }
+            500
+        }else{
+            cacheRemove.delayMills
+        }
+        this.timer.delay(delayMills) {
             try {
                 this.cacheManager.remove(key, region)
                 if(logger.isDebugEnabled){
                     logger.debug("Cache removed by CacheRemove annotation " +
-                            "( method:${method.declaringClass.name}.${method.name}, cache key:$key, cache region:$region ).")
+                            "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
                 }
             } catch (ex: CacheException) {
                 logger.error(

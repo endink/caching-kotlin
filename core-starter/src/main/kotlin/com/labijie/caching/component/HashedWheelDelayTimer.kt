@@ -2,7 +2,9 @@ package com.labijie.caching.component
 
 import io.netty.util.HashedWheelTimer
 import org.springframework.beans.factory.DisposableBean
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,6 +12,8 @@ import java.util.concurrent.TimeUnit
  * @date 2019-03-23
  */
 class HashedWheelDelayTimer : IDelayTimer, DisposableBean {
+
+
     override fun destroy() {
         timerValue?.stop()
     }
@@ -17,6 +21,7 @@ class HashedWheelDelayTimer : IDelayTimer, DisposableBean {
     companion object {
         private val syncRoot: Any = Any()
         private var timerValue: HashedWheelTimer? = null
+        private val threadId  = AtomicInteger(0)
 
         @JvmStatic
         private val timer: HashedWheelTimer
@@ -24,7 +29,12 @@ class HashedWheelDelayTimer : IDelayTimer, DisposableBean {
                 if (timerValue == null) {
                     synchronized(syncRoot) {
                         if (timerValue == null) {
-                            timerValue = HashedWheelTimer(500, TimeUnit.MILLISECONDS, 512).apply {
+                            timerValue = HashedWheelTimer(ThreadFactory {
+                                Thread(it).apply {
+                                    this.name = "caching-delay-${threadId.incrementAndGet()}"
+                                    this.isDaemon = true
+                                }
+                            }, 500, TimeUnit.MILLISECONDS, 512).apply {
                                 this.start()
                             }
                         }
