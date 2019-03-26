@@ -190,6 +190,8 @@ infra:
 
 ```
 
+Since we use lettuce as a redis client, the URLs in all of the above examples are "lettuce schema", and to learn more about redis url, see here: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details
+
 > Current version read preferred from slaves and fall back to master if no slave is not available by default.
 > Specified operation to read master will be supported in the future but not now ..
 
