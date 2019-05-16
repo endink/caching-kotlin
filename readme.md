@@ -7,7 +7,7 @@ A cache structure that supports expiration on a per-key basis.
 
 
 ![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)
-[![Maven metadata URL](https://img.shields.io/maven-metadata/v/http/central.maven.org/maven2/com/labijie/caching-kotlin//maven-metadata.xml.svg)](http://central.maven.org/maven2/com/labijie/caching-kotlin/)
+![Maven Central](https://img.shields.io/maven-central/v/com.labijie/caching-kotlin.svg?color=orange)
 
 All of the jar packages has been uploaded to the maven central.
 
