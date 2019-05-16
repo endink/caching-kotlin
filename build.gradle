@@ -160,23 +160,23 @@ subprojects {
                             }
                         }
 
-//                        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-//                            authentication(userName: u, password: p)
-//                        }
-//
-//                        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-//                            authentication(userName: u, password: p)
-//                        }
-
-                        mavenDeployer {
-                            snapshotRepository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-snapshots/") {
-                                authentication(userName: u, password: p)
-                            }
-
-                            repository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-releases/") {
-                                authentication(userName: u, password: p)
-                            }
+                        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
+                            authentication(userName: u, password: p)
                         }
+
+                        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
+                            authentication(userName: u, password: p)
+                        }
+
+//                        mavenDeployer {
+//                            snapshotRepository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-snapshots/") {
+//                                authentication(userName: u, password: p)
+//                            }
+//
+//                            repository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-releases/") {
+//                                authentication(userName: u, password: p)
+//                            }
+//                        }
                     }
                 }
             }

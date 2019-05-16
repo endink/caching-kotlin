@@ -12,19 +12,19 @@ A cache structure that supports expiration on a per-key basis.
 All of the jar packages has been uploaded to the maven central.
 
 
-## add depenedency in gradle project (coming soon...)
+## add depenedency in gradle project 
 
 Use memory cahce only:
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin:1.0"
+    compile "com.labijie:caching-kotlin:1.0.0"
 }
 ```
 
 for redis:
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin-redis:1.0"
+    compile "com.labijie:caching-kotlin-redis:1.0.0"
 }
 ```
 
@@ -46,7 +46,7 @@ memoryCache.get("a")
 
 ```
 
-## Spring Integration (Memory cache)
+## Spring Integration
 
 import package:
 
@@ -165,7 +165,7 @@ fun withoutCache(){
 
 ```
 
-### Work with Redis
+### Work with redis
 
 #### Configuration
 

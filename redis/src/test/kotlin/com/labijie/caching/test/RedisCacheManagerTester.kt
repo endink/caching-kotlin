@@ -48,6 +48,12 @@ class RedisCacheManagerTester {
         redisConfig.regions["e"] = RedisRegionOptions(url = "${TestingServer.serverUri}/8")
         redisConfig.regions["f"] = RedisRegionOptions(url = "${TestingServer.serverUri}/9")
 
+        val cacheManager:ICacheManager? = null
+        val rm = cacheManager as RedisCacheManager
+        val redisClient = rm.getClient("regionName")
+        val command = redisClient.connection.sync()
+        val oldValue = command.getset("key", System.currentTimeMillis().toString())
+
         return RedisCacheManager(redisConfig)
     }
 
