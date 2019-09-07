@@ -41,7 +41,7 @@ private fun <T> ICacheManager.getOrSet(
         if (!preventException) {
             throw ex
         } else {
-            LoggerFactory.getLogger(ICacheManager::class.java).warn("Get cache data fault.", ex)
+            LoggerFactory.getLogger(ICacheManager::class.java).error("Get cache data fault.", ex)
         }
     }
     if (data == null) {
@@ -53,7 +53,7 @@ private fun <T> ICacheManager.getOrSet(
                 if (!preventException) {
                     throw ex
                 } else {
-                    LoggerFactory.getLogger(ICacheManager::class.java).warn("Set cache data fault.", ex)
+                    LoggerFactory.getLogger(ICacheManager::class.java).error("Set cache data fault.", ex)
                 }
             }
         }
