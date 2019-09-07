@@ -1,9 +1,9 @@
-package com.labijie.caching.testing.configuration
+package com.labijie.caching.configuration
 
-import com.labijie.caching.testing.bean.ISimpleInterface
-import com.labijie.caching.testing.bean.SimpleInterfaceImpl
-import com.labijie.caching.testing.bean.SimpleScopedBean
-import com.labijie.caching.testing.bean.SimpleTestingBean
+import com.labijie.caching.bean.ISimpleInterface
+import com.labijie.caching.bean.SimpleInterfaceImpl
+import com.labijie.caching.bean.SimpleScopedBean
+import com.labijie.caching.bean.SimpleTestingBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy
@@ -28,7 +28,7 @@ class TestConfiguration {
     }
 
     @Bean
-    fun simpleScopedBean(simple:SimpleTestingBean): SimpleScopedBean {
+    fun simpleScopedBean(simple: SimpleTestingBean): SimpleScopedBean {
         return SimpleScopedBean(simple)
     }
 }

@@ -1,13 +1,14 @@
-package com.labijie.caching.testing
+package com.labijie.caching
 
 import com.labijie.caching.CacheOperation
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.cacheScope
 import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.testing.bean.SimpleScopedBean
-import com.labijie.caching.testing.bean.SimpleTestingBean
-import com.labijie.caching.testing.configuration.TestConfiguration
-import com.labijie.caching.testing.model.ArgumentObject
+import com.labijie.caching.get
+import com.labijie.caching.bean.SimpleScopedBean
+import com.labijie.caching.bean.SimpleTestingBean
+import com.labijie.caching.configuration.TestConfiguration
+import com.labijie.caching.model.ArgumentObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,6 +79,22 @@ class AnnotationClassBeanTester {
         Thread.sleep(6000)
         val cached4 = this.cacheManager.get(args.stringValue, ArgumentObject::class)
         Assert.assertNull(cached4)
+    }
+
+    @Test
+    fun listCacheTest(){
+        val list = simple.getCachedList()
+
+        val list2 = simple.getCachedList()
+
+        Assert.assertTrue(list === list2) //引用相同
+
+        simple.removeCachedList()
+
+        val list3 = simple.getCachedList()
+        Assert.assertTrue(list !== list3)
+
+        simple.getCachedList() //清理
     }
 
     @Test

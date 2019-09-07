@@ -1,8 +1,8 @@
-package com.labijie.caching.testing.bean
+package com.labijie.caching.bean
 
 import com.labijie.caching.annotation.Cache
 import com.labijie.caching.annotation.CacheRemove
-import com.labijie.caching.testing.orm.TestEntity
+import com.labijie.caching.orm.TestEntity
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.EmptyResultDataAccessException
 import org.springframework.jdbc.core.JdbcTemplate

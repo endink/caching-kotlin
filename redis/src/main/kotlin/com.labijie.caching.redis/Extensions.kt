@@ -1,9 +1,19 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.labijie.caching.redis
 
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheConnectionException
 import com.labijie.caching.CacheException
+import com.labijie.caching.ICacheManager
+import com.labijie.caching.TimePolicy
 import io.lettuce.core.RedisConnectionException
 import io.lettuce.core.RedisException
+import java.lang.reflect.Type
+import java.util.function.Function
+import kotlin.reflect.KClass
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,4 +26,10 @@ fun RedisException.wrap(error: String): CacheException {
         is RedisConnectionException -> CacheConnectionException(error, ex)
         else -> CacheException(error, ex)
     }
+}
+
+
+fun ICacheManager.get(key: String, valueType: TypeReference<*>, region: String? = null): Any? {
+    val type = valueType.type
+    return this.get(key, type, region)
 }

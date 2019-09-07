@@ -30,19 +30,10 @@ import java.lang.reflect.Method
 class CacheRemoveAspect(
     private val cacheManager: ICacheManager,
     cacheScopeHolder: ICacheScopeHolder,
-    private val timer:IDelayTimer,
+    private val timer: IDelayTimer,
     private val transactionInjection: ITransactionInjection
 ) :
-    CacheAspectBase(cacheScopeHolder), ApplicationContextAware {
-    private var transactionManager: PlatformTransactionManager? = null
-
-    override fun setApplicationContext(applicationContext: ApplicationContext) {
-        this.transactionManager = try {
-            applicationContext.getBean(PlatformTransactionManager::class.java)
-        }catch (e: NoSuchBeanDefinitionException){
-            null
-        }
-    }
+    CacheAspectBase(cacheScopeHolder) {
 
     companion object {
         val logger = LoggerFactory.getLogger(CacheRemoveAspect::class.java)!!
@@ -58,14 +49,14 @@ class CacheRemoveAspect(
 
         val returnValue = joinPoint.proceed(joinPoint.args)
         val method = (joinPoint.signature as MethodSignature).method
-        if(cacheUsed) {
+        if (cacheUsed) {
             if (transactionInjection.isInTransaction) {
                 transactionInjection.hookTransaction { removeCache(method, joinPoint.args) }
             } else {
                 removeCache(method, joinPoint.args)
             }
-        }else{
-            if(logger.isDebugEnabled) {
+        } else {
+            if (logger.isDebugEnabled) {
                 logger.debug("Cache scope prevent cache get operation. ( method:${method.declaringClass.simpleName}.${method.name}).")
             }
         }
@@ -79,33 +70,34 @@ class CacheRemoveAspect(
 
         val (key, region) = this.parseKeyAndRegion(cacheRemove.key, cacheRemove.region, method, args)
 
-        if(logger.isDebugEnabled){
-            logger.debug("Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1000.0)} seconds because of CacheRemove annotation" +
-                    "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
+        if (logger.isDebugEnabled) {
+            logger.debug(
+                "Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1000.0)} seconds because of CacheRemove annotation" +
+                        "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region )."
+            )
         }
 
-        val delayMills = if(cacheRemove.delayMills < 500){
-            if(logger.isDebugEnabled){
-                logger.debug("${CacheRemove::class.java.simpleName} delay must be greater than 500ms, if not will be set to 500" +
-                        "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
-            }
-            500
-        }else{
-            cacheRemove.delayMills
-        }
-        this.timer.delay(delayMills) {
-            try {
-                this.cacheManager.remove(key, region)
-                if(logger.isDebugEnabled){
-                    logger.debug("Cache removed by CacheRemove annotation " +
-                            "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region ).")
+        if (cacheRemove.delayMills <= 0) {
+            this.cacheManager.remove(key, region)
+        } else {
+            val delay = Math.max(1000L, cacheRemove.delayMills)
+            this.timer.delay(delay) {
+                try {
+                    this.cacheManager.remove(key, region)
+                    if (logger.isDebugEnabled) {
+                        logger.debug(
+                            "Cache removed by CacheRemove annotation " +
+                                    "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region )."
+                        )
+                    }
+                } catch (ex: CacheException) {
+                    logger.error(
+                        "Remove cache fault ( method: ${method.declaringClass.simpleName}.${method.name} ).",
+                        ex
+                    )
                 }
-            } catch (ex: CacheException) {
-                logger.error(
-                    "Remove cache fault ( method: ${method.declaringClass.simpleName}.${method.name} ).",
-                    ex
-                )
             }
         }
+
     }
 }

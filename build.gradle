@@ -2,11 +2,11 @@ buildscript {
     ext {
         kotlin_version = '1.3.11'
         junit_version = '4.12'
-        global_version = '1.0.2'
-        slf4j_version = '1.7.26'
+        global_version = '1.0.5'
+        slf4j_version = '1.7.28'
         jackson_version = '2.9.8'
-        lettuce_version = '5.1.5.RELEASE'
-        netty_version='4.1.34.Final'
+        lettuce_version = '5.1.8.RELEASE'
+        netty_version='4.1.38.Final'
 
         spring_version='5.1.5.RELEASE'
         spring_boot_version = '2.1.3.RELEASE'

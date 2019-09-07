@@ -1,7 +1,8 @@
 package com.labijie.caching.memory
 
 import com.labijie.caching.*
-import java.util.HashSet
+import java.lang.reflect.Type
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -61,7 +62,11 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         }
     }
 
-    override fun get(key: String, region: String?): Any? {
+    override fun get(key: String, valueType: Type, region: String?): Any? {
+        return getCore(key, region)
+    }
+
+    private fun getCore(key: String,region: String?): Any? {
         this.validateRegion(region)
 
         val name = getRegionName(region)
@@ -103,7 +108,7 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     }
 
     override fun refresh(key: String, region: String?): Boolean {
-        val result = this.get(key, region)
+        val result = this.getCore(key, region)
         return result != null
     }
 

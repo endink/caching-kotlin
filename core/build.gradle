@@ -1,3 +1,4 @@
 dependencies {
     compile group: 'org.slf4j', name: 'slf4j-api', version: slf4j_version
+    compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: kotlin_version
 }

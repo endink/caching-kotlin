@@ -1,11 +1,12 @@
-package com.labijie.caching.testing
+package com.labijie.caching
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.testing.bean.ISimpleInterface
-import com.labijie.caching.testing.bean.SimpleTestingBean
-import com.labijie.caching.testing.configuration.TestConfiguration
-import com.labijie.caching.testing.model.ArgumentObject
+import com.labijie.caching.get
+import com.labijie.caching.bean.ISimpleInterface
+import com.labijie.caching.bean.SimpleTestingBean
+import com.labijie.caching.configuration.TestConfiguration
+import com.labijie.caching.model.ArgumentObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

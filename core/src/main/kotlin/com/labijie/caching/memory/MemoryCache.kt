@@ -101,9 +101,8 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         startScanForExpiredItems()
     }
 
-    fun <T> get(key: Any): T? {
-        @Suppress("UNCHECKED_CAST")
-        return this.getOrDefault(key, null) as? T
+    fun get(key: Any): Any? {
+        return this.getOrDefault(key, null)
     }
 
     fun <T> set(key: Any, value: T, options: MemoryCacheEntryOptions?): T {

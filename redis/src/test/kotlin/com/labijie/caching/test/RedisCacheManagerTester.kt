@@ -1,15 +1,17 @@
 package com.labijie.caching.test
 
+import com.fasterxml.jackson.core.type.TypeReference
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
-import com.labijie.caching.memory.MemoryCacheManager
+import com.labijie.caching.getOrSet
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
 import org.junit.Assert
 import org.junit.Test
-import java.lang.reflect.InvocationTargetException
+import java.time.Duration
 import java.util.*
+import java.util.function.Function
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -48,11 +50,11 @@ class RedisCacheManagerTester {
         redisConfig.regions["e"] = RedisRegionOptions(url = "${TestingServer.serverUri}/8")
         redisConfig.regions["f"] = RedisRegionOptions(url = "${TestingServer.serverUri}/9")
 
-        val cacheManager:ICacheManager? = null
-        val rm = cacheManager as RedisCacheManager
-        val redisClient = rm.getClient("regionName")
-        val command = redisClient.connection.sync()
-        val oldValue = command.getset("key", System.currentTimeMillis().toString())
+//        val cacheManager:ICacheManager? = null
+//        val rm = cacheManager as RedisCacheManager
+//        val redisClient = rm.getClient("regionName")
+//        val command = redisClient.connection.sync()
+//        val oldValue = command.getset("key".toByteArray(Charsets.UTF_8), System.currentTimeMillis().toString())
 
         return RedisCacheManager(redisConfig)
     }
@@ -64,14 +66,14 @@ class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun testGet() {
 
-        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", "b"))
-        Assert.assertNull( "当值不存在时 get 应为 null", redisCache.get("b", "a"))
-        Assert.assertNull("当值不存在时 get 应为 null",redisCache.get("a", ""))
-        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", null as String?))
+        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", String::class.java,"b"))
+        Assert.assertNull( "当值不存在时 get 应为 null", redisCache.get("b", String::class.java,"a"))
+        Assert.assertNull("当值不存在时 get 应为 null",redisCache.get("a", String::class.java,""))
+        Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", String::class.java,null as String?))
 
         val `val` = TestData()
         redisCache.set("a", `val`, null, TimePolicy.Absolute, "b")
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", "b"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", TestData::class.java,"b"))
     }
 
     /**
@@ -87,11 +89,11 @@ class RedisCacheManagerTester {
         redisCache.set("d", `val`, null, TimePolicy.Sliding, null)
         redisCache.set("e", `val`, null, TimePolicy.Sliding, "")
 
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", "region1"))
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("b", "region2"))
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("c", null as String?))
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("d", null as String?))
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("e", ""))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", TestData::class.java,"region1"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("b", TestData::class.java,"region2"))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("c", TestData::class.java,null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("d", TestData::class.java,null as String?))
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("e", TestData::class.java,""))
     }
 
     /**
@@ -113,11 +115,11 @@ class RedisCacheManagerTester {
         redisCache.remove("d", null)
         redisCache.remove("e", "")
 
-        Assert.assertNull("remove 方法未生效。", redisCache.get("a", "region1"))
-        Assert.assertNull("remove 方法未生效。", redisCache.get("b", "region2"))
-        Assert.assertNull("remove 方法未生效。", redisCache.get("c", null as String?))
-        Assert.assertNull("remove 方法未生效。", redisCache.get("d", null as String?))
-        Assert.assertNull("remove 方法未生效。", redisCache.get("e", ""))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("a", TestData::class.java,"region1"))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("b", TestData::class.java,"region2"))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("c", TestData::class.java,null as String?))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("d", TestData::class.java,null as String?))
+        Assert.assertNull("remove 方法未生效。", redisCache.get("e", TestData::class.java,""))
     }
 
 
@@ -138,12 +140,12 @@ class RedisCacheManagerTester {
         redisCache.clearRegion("region1")
         redisCache.clearRegion("region2")
 
-        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("a", "region1"))
-        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("b", "region2"))
-        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("c", null as String?))
-        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("d", null as String?))
-        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("e", ""))
-        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("f", "region3"))
+        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("a", TestData::class.java,"region1"))
+        Assert.assertNull("clearRegion 方法未生效。", redisCache.get("b", TestData::class.java,"region2"))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("c", TestData::class.java,null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("d", TestData::class.java,null as String?))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("e", TestData::class.java,""))
+        Assert.assertNotNull("clearRegion 清除了多余的区域。", redisCache.get("f", TestData::class.java,"region3"))
     }
 
     /**
@@ -161,15 +163,89 @@ class RedisCacheManagerTester {
 
         redisCache.clear()
 
-        Assert.assertNull("clear 方法未生效。", redisCache.get("a", "region1"))
-        Assert.assertNull("clear 方法未生效。", redisCache.get("b", "region2"))
-        Assert.assertNull("clear 方法未生效。", redisCache.get("c", null as String?))
-        Assert.assertNull("clear 方法未生效。", redisCache.get("d", null as String?))
-        Assert.assertNull("clear 方法未生效。", redisCache.get("e", ""))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("a", TestData::class.java,"region1"))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("b", TestData::class.java,"region2"))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("c", TestData::class.java,null as String?))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("d", TestData::class.java,null as String?))
+        Assert.assertNull("clear 方法未生效。", redisCache.get("e", TestData::class.java,""))
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testList(){
+        val list = listOf(TestData(), TestData(), TestData())
+
+        redisCache.set("list-test", list, 5000L)
+
+        val tr = object: TypeReference<List<TestData>>(){}
+        val value = redisCache.get("list-test", tr.type)
+        Assert.assertNotNull(value)
+
+        val listData = value as List<*>
+        Assert.assertEquals(3, listData.size)
+
+        Assert.assertArrayEquals(list.toTypedArray(), listData.toTypedArray())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testMap(){
+        val map = mapOf(
+            "123" to TestData(),
+            "234" to TestData(),
+            "345" to TestData())
+
+        redisCache.set("list-test", map, 5000L)
+
+        val tr = object: TypeReference<Map<String, TestData>>(){}
+        val value = redisCache.get("list-test", tr.type)
+        Assert.assertNotNull(value)
+
+        val listData = value as Map<*, *>
+        Assert.assertEquals(3, listData.size)
+
+        Assert.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun testMapGetOrSet(){
+        val map:Map<String, TestData> = mapOf(
+            "123" to TestData(),
+            "234" to TestData(),
+            "345" to TestData())
+
+        val map2:Map<String, TestData> = mapOf(
+            "123" to TestData(),
+            "234" to TestData(),
+            "345" to TestData())
+
+        val data = redisCache.getOrSet("list-test",
+            Function<String, Map<String, TestData>?> { map }, 60000L)
+
+        val data2 = redisCache.getOrSet("list-test", Duration.ofSeconds(60)){
+            map2
+        }
+
+        Assert.assertTrue(map === data)
+
+        Assert.assertNotNull(data)
+        Assert.assertNotNull(data2)
+        Assert.assertArrayEquals(data!!.toList().toTypedArray(), data2!!.toList().toTypedArray())
+
+        val tr = object: TypeReference<Map<String, TestData>>(){}
+        val value = redisCache.get("list-test", tr.type)
+        Assert.assertNotNull(value)
+
+        val listData = value as Map<*, *>
+        Assert.assertEquals(3, listData.size)
+
+        Assert.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
     }
 
     private data class TestData(
         var intValue:Int = Random.nextInt(),
         var stringValue:String = UUID.randomUUID().toString()
     )
+
 }

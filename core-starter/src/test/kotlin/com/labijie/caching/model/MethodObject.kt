@@ -1,4 +1,4 @@
-package com.labijie.caching.testing.model
+package com.labijie.caching.model
 
 import java.math.BigDecimal
 
@@ -12,11 +12,11 @@ class MethodObject {
         return ArgumentObject()
     }
 
-    fun objectArgMethod(obj:ArgumentObject): ArgumentObject {
+    fun objectArgMethod(obj: ArgumentObject): ArgumentObject {
         return obj
     }
 
-    fun compositeArgMethod(arg1:Int, arg2:ArgumentObject, arg3:Long?): ArgumentObject {
+    fun compositeArgMethod(arg1:Int, arg2: ArgumentObject, arg3:Long?): ArgumentObject {
         return arg2
     }
 }

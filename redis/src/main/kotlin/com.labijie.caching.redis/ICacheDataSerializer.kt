@@ -1,6 +1,6 @@
 package com.labijie.caching.redis
 
-import kotlin.reflect.KClass
+import java.lang.reflect.Type
 
 /**
  * Created with IntelliJ IDEA.
@@ -9,6 +9,6 @@ import kotlin.reflect.KClass
  */
 interface ICacheDataSerializer {
     val name:String
-    fun <T:Any> deserializeData(type: KClass<T>, data: String): T?
-    fun serializeData(data: Any): String
+    fun deserializeData(type: Type, data: ByteArray): Any?
+    fun serializeData(data: Any): ByteArray
 }

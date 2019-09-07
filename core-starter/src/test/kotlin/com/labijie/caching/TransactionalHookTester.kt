@@ -1,13 +1,14 @@
-package com.labijie.caching.testing
+package com.labijie.caching
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.testing.bean.SimpleScopedBean
-import com.labijie.caching.testing.bean.SimpleTestingBean
-import com.labijie.caching.testing.bean.TransactionalBean
-import com.labijie.caching.testing.configuration.TransactionalConfiguration
-import com.labijie.caching.testing.configuration.TestConfiguration
-import com.labijie.caching.testing.orm.TestEntity
+import com.labijie.caching.get
+import com.labijie.caching.bean.SimpleScopedBean
+import com.labijie.caching.bean.SimpleTestingBean
+import com.labijie.caching.bean.TransactionalBean
+import com.labijie.caching.configuration.TransactionalConfiguration
+import com.labijie.caching.configuration.TestConfiguration
+import com.labijie.caching.orm.TestEntity
 import org.junit.Assert
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,7 +50,7 @@ class TransactionalHookTester {
     fun init() {
         cacheManager.clear()
         val sql =
-            this::class.java.classLoader.getResourceAsStream("CreateTestTable.sql").readBytes().toString(Charsets.UTF_8)
+            this::class.java.classLoader.getResourceAsStream("CreateTestTable.sql")!!.readBytes().toString(Charsets.UTF_8)
         jdbcTemplate.execute(sql)
     }
 

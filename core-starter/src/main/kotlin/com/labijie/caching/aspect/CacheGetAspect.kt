@@ -12,6 +12,7 @@ import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Method
+import java.lang.reflect.ParameterizedType
 
 /**
  * Created with IntelliJ IDEA.
@@ -40,7 +41,10 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         if (cacheUsed && cacheAnnotation != null) {
             try {
                 keyAndRegion = parseKeyAndRegion(cacheAnnotation.key, cacheAnnotation.region, method, joinPoint.args)
-                val value = this.cacheManager.get(keyAndRegion.first, keyAndRegion.second)
+
+                val parameterizedType = method.genericReturnType
+
+                val value = this.cacheManager.get(keyAndRegion.first, parameterizedType, keyAndRegion.second)
                 if (value != null) {
                     if (method.returnType.isAssignableFrom(value::class.java)) {
                         if(!logger.isDebugEnabled){

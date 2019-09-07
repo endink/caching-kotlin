@@ -30,7 +30,7 @@ class JdbcTransactionInjection:ApplicationContextAware, ITransactionInjection {
                 val m = applicationContext.getBean(PlatformTransactionManager::class.java)
                 Optional.of(m)
             }catch (e:NoSuchBeanDefinitionException){
-                Optional.empty<PlatformTransactionManager>()
+                Optional.empty()
             }
         }
     }

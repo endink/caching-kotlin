@@ -1,4 +1,4 @@
-package com.labijie.caching.testing.orm
+package com.labijie.caching.orm
 
 import java.util.*
 import kotlin.random.Random

@@ -6,12 +6,12 @@ import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.codec.ByteArrayCodec
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
-import io.lettuce.core.codec.Utf8StringCodec
 import io.lettuce.core.masterslave.MasterSlave
-import io.lettuce.core.masterslave.StatefulRedisMasterSlaveConnection
+import java.lang.reflect.Type
+import java.nio.ByteBuffer
 
 
 /**
@@ -21,7 +21,6 @@ import io.lettuce.core.masterslave.StatefulRedisMasterSlaveConnection
  */
 open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICacheManager {
 
-    private val NEW_LINE = System.lineSeparator()
 
     // KEYS[1] = = key
     // ARGV[1] = absolute-expiration - ticks as long (-1 for none)
@@ -31,22 +30,42 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     // ARGV[5] = serializer - type string
     // this order should not change LUA script depends on it
     private val SET_SCRIPT = "local result = 1 " + NEW_LINE +
-            "redis.call('HMSET', KEYS[1], 'absexp', ARGV[1], 'sldexp', ARGV[2], 'data', ARGV[4], 'type', ARGV[5], 'ser', ARGV[6]) " + NEW_LINE +
+            "redis.call('HMSET', KEYS[1], 'absexp', ARGV[1], 'sldexp', ARGV[2], 'data', ARGV[4], 'ser', ARGV[5]) " + NEW_LINE +
             "if ARGV[3] ~= '-1' then" + NEW_LINE +
             "result = redis.call('EXPIRE', KEYS[1], ARGV[3]) " + NEW_LINE +
             " end " + NEW_LINE +
             "return result"
 
-    private val ABSOLUTE_EXPIRATIONKEY = "absexp"
-    private val SLIDING_EXPIRATION_KEY = "sldexp"
-    private val DATA_KEY = "data"
-    private val TYPE_KEY = "type"
-    private val SERIALIZER_KEY = "ser"
-    private val NOT_PRESENT: Long = -1
 
     companion object {
+        private const val ABSOLUTE_EXPIRATION_KEY = "absexp"
+        private const val SLIDING_EXPIRATION_KEY = "sldexp"
+        private const val DATA_KEY = "data"
+        private const val SERIALIZER_KEY = "ser"
+
+        private val ABSOLUTE_EXPIRATION_ARRAY_KEY = ABSOLUTE_EXPIRATION_KEY.toByteArray(Charsets.UTF_8)
+        private val SLIDING_EXPIRATION_ARRAY_KEY = SLIDING_EXPIRATION_KEY.toByteArray(Charsets.UTF_8)
+        private val DATA_ARRAY_KEY = DATA_KEY.toByteArray((Charsets.UTF_8))
+        private val SERIALIZER_ARRAY_KEY = SERIALIZER_KEY.toByteArray(Charsets.UTF_8)
+
+        private const val NOT_PRESENT: Long = -1
+
+        private val NEW_LINE = System.lineSeparator()
         val logger = LoggerFactory.getLogger(RedisCacheManager::class.java)
         const val NULL_REGION_NAME = "--"
+
+        private fun Long.toByteArray(): ByteArray {
+            val buffer = ByteBuffer.allocate(8)
+            buffer.putLong(0, this)
+            return buffer.array()
+        }
+
+        fun ByteArray.toLong(): Long {
+            val buffer = ByteBuffer.allocate(8)
+            buffer.put(this, 0, 8)
+            buffer.flip()//need flip
+            return buffer.long
+        }
     }
 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
@@ -79,14 +98,14 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         return c
     }
 
-    fun createClientAndConnection(url: String): Pair<RedisClient, StatefulRedisConnection<String, String>> {
+    private fun createClientAndConnection(url: String): Pair<RedisClient, StatefulRedisConnection<ByteArray, ByteArray>> {
         if (url.isBlank()) {
             throw RedisException("Redis url cant not be null or empty string.")
         }
         val urls = url.split(",")
         if (urls.size <= 1) {
             val c = RedisClient.create(url)
-            val connection = c.connect()
+            val connection = c.connect(ByteArrayCodec())
             return Pair(c, connection)
         } else {
             val redisUrls = urls.map {
@@ -94,7 +113,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             }
             val client = RedisClient.create()
             val connection = MasterSlave.connect(
-                client, Utf8StringCodec(),
+                client, ByteArrayCodec(),
                 redisUrls
             )
             connection.readFrom = ReadFrom.SLAVE_PREFERRED
@@ -108,13 +127,13 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }.toMap()
     }
 
-    private fun <T : Any> deserializeData(serializerName: String, type: KClass<T>, data: String): T? {
+    private fun deserializeData(serializerName: String, type: Type, data: ByteArray): Any? {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.deserializeData(type, data)
     }
 
 
-    private fun serializeData(serializerName: String, data: Any): String {
+    private fun serializeData(serializerName: String, data: Any): ByteArray {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.serializeData(data)
     }
@@ -126,50 +145,57 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     }
 
     private fun getAndRefresh(
-        connection: StatefulRedisConnection<String, String>,
+        connection: StatefulRedisConnection<ByteArray, ByteArray>,
         key: String,
         getData: Boolean
     ): CacheHashData? {
         val command = connection.sync()
+        val keyArray = key.toByteArray(Charsets.UTF_8)
         val hashResult = if (getData) {
             command.hmget(
-                key,
-                ABSOLUTE_EXPIRATIONKEY,
-                SLIDING_EXPIRATION_KEY,
-                DATA_KEY,
-                TYPE_KEY,
-                SERIALIZER_KEY
-            ).toMap()
+                keyArray,
+                ABSOLUTE_EXPIRATION_KEY.toByteArray(Charsets.UTF_8),
+                SLIDING_EXPIRATION_KEY.toByteArray(Charsets.UTF_8),
+                DATA_KEY.toByteArray(Charsets.UTF_8),
+                SERIALIZER_KEY.toByteArray(Charsets.UTF_8)
+            )
         } else {
-            command.hmget(key, ABSOLUTE_EXPIRATIONKEY, SLIDING_EXPIRATION_KEY).toMap()
-        }
-
-
-        if (hashResult.isEmpty()) {
-            return null
-        }
-
-        // TODO: Error handling
-        if (hashResult.size >= 2) {
-            this.refreshExpire(
-                connection, key,
-                hashResult.getValue(ABSOLUTE_EXPIRATIONKEY).toLongOrNull(),
-                hashResult.getValue(SLIDING_EXPIRATION_KEY).toLongOrNull()
+            command.hmget(
+                keyArray,
+                ABSOLUTE_EXPIRATION_KEY.toByteArray(Charsets.UTF_8),
+                SLIDING_EXPIRATION_KEY.toByteArray(Charsets.UTF_8)
             )
         }
 
-        if (hashResult.size >= 5) {
-            val type = hashResult.getOrDefault(TYPE_KEY, "")
-            val data = hashResult.getOrDefault(DATA_KEY, "")
-            val serializer = hashResult.getOrDefault(SERIALIZER_KEY, "")
+        val values = hashResult?.filter { it.hasValue() }
+        if (values.isNullOrEmpty()) {
+            return null
+        }
 
-            return CacheHashData(type, data, serializer)
+
+        val valueMap = values.map { it.key.toString(Charsets.UTF_8) to it.value }.toMap()
+
+
+        // TODO: Error handling
+        if (valueMap.size >= 2) {
+            this.refreshExpire(
+                connection, key,
+                valueMap.getOrDefault(ABSOLUTE_EXPIRATION_KEY, null)?.toLong(),
+                valueMap.getOrDefault(SLIDING_EXPIRATION_KEY, null)?.toLong()
+            )
+        }
+
+        if (valueMap.size >= 4) {
+            val data = valueMap.getOrDefault(DATA_KEY, null)
+            val serializer = valueMap.getOrDefault(SERIALIZER_KEY, null)?.toString(Charsets.UTF_8).orEmpty()
+
+            return CacheHashData(data, serializer)
         }
         return null
     }
 
     private fun refreshExpire(
-        connection: StatefulRedisConnection<String, String>,
+        connection: StatefulRedisConnection<ByteArray, ByteArray>,
         key: String,
         absExpr: Long?,
         sldExpr: Long?
@@ -177,19 +203,19 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         // Note Refresh has no effect if there is just an absolute expiration (or neither).
         val expr: Long?
         if (sldExpr != null && sldExpr != NOT_PRESENT) {
-            if (absExpr != null && absExpr != NOT_PRESENT) {
+            expr = if (absExpr != null && absExpr != NOT_PRESENT) {
                 val relExpr = absExpr - System.currentTimeMillis()
-                expr = if (relExpr <= sldExpr) relExpr else sldExpr
+                if (relExpr <= sldExpr) relExpr else sldExpr
             } else {
-                expr = sldExpr
+                sldExpr
             }
-            connection.sync().expire(key, expr / 1000)
+            connection.sync().expire(key.toByteArray(Charsets.UTF_8), expr / 1000)
         }
     }
 
-    protected fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region: String?) {
+    protected fun removeCore(connection: StatefulRedisConnection<ByteArray, ByteArray>, key: String, region: String?) {
         try {
-            connection.sync().del(key)
+            connection.sync().del(key.toByteArray(Charsets.UTF_8))
         } catch (ex: RedisException) {
             throw ex.wrap("Delete key fault ( key: $key, region: $region ).")
         }
@@ -209,48 +235,64 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             return
         }
         val creationTime = System.currentTimeMillis()
-
-        val values = arrayOf(
-            (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString(),
-            (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString(),
-            (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString(),
-            this.serializeData(client.serializer, data),
-            data::class.java.name,
-            client.serializer
-        )
+        /****************** lua 脚本无法处理字节数组，使用事务代替 **********************/
+//        val values = arrayOf(
+//             (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toByteArray(),
+//            (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toByteArray(),
+//            (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toByteArray(),
+//            this.serializeData(client.serializer, data),
+//            client.serializer.toByteArray(Charsets.UTF_8)
+//        )
 
         val command = client.connection.sync()
-        val script = command.scriptLoad(SET_SCRIPT)
-        val result = command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
-        if (result == null) {
-            logger.error("Put data to redis cache fault, lua script return null (  key: $key, region: $region ).")
+
+//        val script = command.scriptLoad(SET_SCRIPT.toByteArray(Charsets.UTF_8))
+//        val result = command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key.toByteArray(Charsets.UTF_8)), *values)
+
+        val timeoutSeconds = (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT)
+        if (timeoutSeconds != NOT_PRESENT) {
+            val result = command.multi()
+            if (result != "OK") {
+                logger.error("Put data to redis cache fault, redis multi return '$result' (  key: $key, region: $region ).")
+            }
+        }
+        val keyArray = key.toByteArray(Charsets.UTF_8)
+        command.hmset(
+            keyArray, mapOf(
+                ABSOLUTE_EXPIRATION_ARRAY_KEY to (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toByteArray(),
+                SLIDING_EXPIRATION_ARRAY_KEY to (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toByteArray(),
+                DATA_ARRAY_KEY to this.serializeData(client.serializer, data),
+                SERIALIZER_ARRAY_KEY to client.serializer.toByteArray(Charsets.UTF_8)
+            )
+        )
+        if (timeoutSeconds != NOT_PRESENT) {
+            command.expire(keyArray, timeoutSeconds)
+        }
+
+        val result = if (timeoutSeconds != NOT_PRESENT) {
+            command.exec()
+        } else {
+            null
+        }
+
+
+        if (result != null && result.wasDiscarded()) {
+            logger.error("Put data to redis cache fault, redis transaction was discarded (  key: $key, region: $region ).")
         }
     }
 
-    private fun <T : Any> getCore(key: String, valueType: KClass<T>?, region: String?): T? {
+    private fun getCore(key: String, region: String?, type: Type): Any? {
         this.validateKey(key)
         try {
             val client = this.getClient(region)
             val cacheHashData = this.getAndRefresh(client.connection, key, true)
-            if (cacheHashData != null) {
-                //考虑程序变更后类型可能已经不存在或更名。
-                var clazz: KClass<*>? = valueType
-                if (clazz == null) {
-                    try {
-                        clazz = Class.forName(cacheHashData.type).kotlin
-                    } catch (cne: ClassNotFoundException) {
-                        this.remove(key, region)
-                        logger.warn("The specified type '${cacheHashData.type}' could not be found to deserialize the cached data, and the cache with key '$key' has been removed ( region: $region ).")
-                        return null
-                    }
-                }
+            if (cacheHashData?.data != null) {
 
                 //考虑数据结构更新后缓存反序列化的问题。
                 return try {
-                    @Suppress("UNCHECKED_CAST")
-                    this.deserializeData(cacheHashData.serializer, clazz, cacheHashData.data) as? T
+                    this.deserializeData(cacheHashData.serializer, type, cacheHashData.data!!)
                 } catch (ex: Throwable) {
-                    logger.warn("The specified type '${cacheHashData.type}' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
+                    logger.warn("The specified type '$type' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
 
                     if (ex is OutOfMemoryError || ex is StackOverflowError) {
                         throw ex
@@ -267,12 +309,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         return null
     }
 
-    override fun <T : Any> get(key: String, valueType: KClass<T>, region: String?): T? {
-        return this.getCore(key, valueType, region)
-    }
-
-    override fun get(key: String, region: String?): Any? {
-        return this.getCore(key, null, region)
+    override fun get(key: String, valueType: Type, region: String?): Any? {
+        return this.getCore(key, region, valueType)
     }
 
     override fun set(

@@ -1,4 +1,4 @@
-package com.labijie.caching.testing.model
+package com.labijie.caching.model
 
 import java.util.*
 import kotlin.random.Random

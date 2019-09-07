@@ -1,6 +1,6 @@
-package com.labijie.caching.testing.configuration
+package com.labijie.caching.configuration
 
-import com.labijie.caching.testing.bean.TransactionalBean
+import com.labijie.caching.bean.TransactionalBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import javax.sql.DataSource
@@ -26,7 +26,7 @@ class TransactionalConfiguration {
     }
 
     @Bean
-    fun transactionalBean():TransactionalBean{
+    fun transactionalBean(): TransactionalBean {
         return TransactionalBean()
     }
 }

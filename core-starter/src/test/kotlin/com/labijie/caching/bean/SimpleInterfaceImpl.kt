@@ -1,6 +1,6 @@
-package com.labijie.caching.testing.bean
+package com.labijie.caching.bean
 
-import com.labijie.caching.testing.model.ArgumentObject
+import com.labijie.caching.model.ArgumentObject
 import org.springframework.stereotype.Component
 
 /**

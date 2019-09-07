@@ -96,11 +96,11 @@ class MemoryCacheTester {
     @Throws(Exception::class)
     fun testRemove() {
         memoryCache.set("a", Any(), 3000L)
-        val obj = memoryCache.get<Any>("a")
+        val obj = memoryCache.get("a")
         Assert.assertNotNull("set 后再取值返回了 null。", obj)
 
         memoryCache.remove("a")
-        val obj2 = memoryCache.get<Any>("a")
+        val obj2 = memoryCache.get("a")
         Assert.assertNull("删除 key 后存在。", obj2)
     }
 
@@ -116,7 +116,7 @@ class MemoryCacheTester {
         val value = Any()
         memoryCache.set("a", value, options)
         Thread.sleep(1000)
-        val v = memoryCache.get<Any>("a")
+        val v = memoryCache.get("a")
 
         Assert.assertNull("set 测试滑动过期时间无效。", v)
     }
@@ -145,7 +145,7 @@ class MemoryCacheTester {
             }
         })
         Thread.sleep(1000)
-        val v = memoryCache.get<Any>("a")
+        val v = memoryCache.get("a")
 
         Assert.assertNull("set 测试滑动过期时间无效。", v)
     }
@@ -159,10 +159,10 @@ class MemoryCacheTester {
         val time = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(1)
         val value = Any()
         memoryCache.set("a", value, time)
-        var existed = memoryCache.get<Any>("a")
+        var existed = memoryCache.get("a")
         Assert.assertNotNull("set 使用绝对过期时间缓存意外过期。", existed)
         Thread.sleep(2000)
-        existed = memoryCache.get<Any>("a")
+        existed = memoryCache.get("a")
         Assert.assertNull("set 使用绝对过期时间缓存项未过期。", existed)
     }
 
@@ -175,19 +175,19 @@ class MemoryCacheTester {
         val value = Any()
         memoryCache.set("a", value, 2000L)
         Thread.sleep(1000)
-        var existed = memoryCache.get<Any>("a")
+        var existed = memoryCache.get("a")
         Assert.assertTrue("set 使用滑动过期时间缓存项失效。", value === existed)
 
         Thread.sleep(1000)
-        existed = memoryCache.get<Any>("a")
+        existed = memoryCache.get("a")
         Assert.assertTrue("set 使用滑动过期时间缓存项失效。", value === existed)
 
         Thread.sleep(1000)
-        existed = memoryCache.get<Any>("a")
+        existed = memoryCache.get("a")
         Assert.assertTrue("set 使用滑动过期时间缓存项失效。", value === existed)
 
         Thread.sleep(3000)
-        existed = memoryCache.get<Any>("a")
+        existed = memoryCache.get("a")
         Assert.assertNull("set 使用滑动过期时间缓存项未失效。", existed)
     }
 

@@ -1,9 +1,9 @@
-package com.labijie.caching.testing
+package com.labijie.caching
 
 import com.labijie.caching.expression.SpELContext
 import com.labijie.caching.expression.SpELEvaluator
-import com.labijie.caching.testing.model.ArgumentObject
-import com.labijie.caching.testing.model.MethodObject
+import com.labijie.caching.model.ArgumentObject
+import com.labijie.caching.model.MethodObject
 import org.junit.Assert
 import org.junit.Test
 import java.math.BigDecimal
