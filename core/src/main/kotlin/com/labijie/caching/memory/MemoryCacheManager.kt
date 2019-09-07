@@ -116,7 +116,7 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         this.validateRegion(region)
 
         val name = getRegionName(region)
-        val regionKeys = caches.getOrDefault(name, null)
+        val regionKeys = caches.remove(name)
         if (regionKeys != null) {
             for (v in regionKeys) {
                 cache.remove(v)
@@ -125,11 +125,11 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     }
 
     override fun clear() {
-        val keys = this.caches.keys()
-        while (keys.hasMoreElements()) {
-            val values = caches.getOrDefault(keys.nextElement(), null)
-            if (values != null) {
-                for (v in values) {
+        val keys = this.caches.keys.toArray()
+        keys.forEach {
+            val regionKeys = caches.remove(it)
+            if (regionKeys != null) {
+                for (v in regionKeys) {
                     cache.remove(v)
                 }
             }
