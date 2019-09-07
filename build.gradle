@@ -29,7 +29,7 @@ buildscript {
 allprojects {
 
     group 'com.labijie'
-    version '1.0.1'
+    version '1.0.5'
 
     apply plugin: 'kotlin'
     apply plugin: 'java'
