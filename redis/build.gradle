@@ -2,5 +2,5 @@ dependencies {
     compile project(":core")
     compile group: 'io.lettuce', name: 'lettuce-core', version: lettuce_version
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
-
+    compile group: 'com.esotericsoftware', name: 'kryo', version: kryo_version
 }

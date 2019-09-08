@@ -10,7 +10,7 @@ import java.lang.annotation.Inherited
  */
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
-annotation class CacheScope(
-    val prevent: Array<CacheOperation>
+annotation class SuppressCache(
+    val operations: Array<CacheOperation>
 ) {
 }

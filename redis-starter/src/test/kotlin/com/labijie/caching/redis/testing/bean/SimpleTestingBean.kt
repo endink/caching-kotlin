@@ -17,6 +17,7 @@ open class SimpleTestingBean {
         const val SIMPLE_CACHE_KEY = "simple-test"
         const val LIST_CACHE_KEY = "list-test"
         const val MAP_CACHE_KEY = "map-test"
+        const val ARRAY_CACHE_KEY = "array-test"
     }
 
     @Cache("'$LIST_CACHE_KEY'", 30000)
@@ -42,6 +43,15 @@ open class SimpleTestingBean {
         )
     }
 
+    @Cache("'$ARRAY_CACHE_KEY'", 30000)
+    fun getCachedArray(): Array<ArgumentObject> {
+        return arrayOf(
+            ArgumentObject(),
+            ArgumentObject(),
+            ArgumentObject()
+        )
+    }
+
     @CacheRemove("'$SIMPLE_CACHE_KEY'", delayMills = 0)
     fun removeCachedSimple() {
     }
@@ -52,5 +62,9 @@ open class SimpleTestingBean {
 
     @CacheRemove("'$MAP_CACHE_KEY'", delayMills = 0)
     fun removeCachedMap() {
+    }
+
+    @CacheRemove("'$ARRAY_CACHE_KEY'", delayMills = 0)
+    fun removeCachedArray() {
     }
 }

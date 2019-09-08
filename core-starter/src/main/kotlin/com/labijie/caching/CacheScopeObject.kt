@@ -5,7 +5,7 @@ package com.labijie.caching
  * @author Anders Xiao
  * @date 2019-03-23
  */
-internal class CacheScopeObject(private val cacheScopeHolder: ICacheScopeHolder, vararg prevent: CacheOperation) :AutoCloseable {
+internal class CacheScopeObject(private val cacheScopeHolder: ICacheScopeHolder, vararg suppressed: CacheOperation) :AutoCloseable {
 
     var parent: ICacheScopeHolder.ScopeSettings? = null
 
@@ -14,7 +14,7 @@ internal class CacheScopeObject(private val cacheScopeHolder: ICacheScopeHolder,
         if(hasParentScope){
             parent = cacheScopeHolder.settings
         }
-        cacheScopeHolder.settings = ICacheScopeHolder.ScopeSettings(prevent)
+        cacheScopeHolder.settings = ICacheScopeHolder.ScopeSettings(suppressed)
     }
 
     override fun close() {

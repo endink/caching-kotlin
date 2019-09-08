@@ -1,12 +1,8 @@
 package com.labijie.caching
 
-import com.labijie.caching.CacheOperation
-import com.labijie.caching.ICacheManager
-import com.labijie.caching.cacheScope
-import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.get
 import com.labijie.caching.bean.SimpleScopedBean
 import com.labijie.caching.bean.SimpleTestingBean
+import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.configuration.TestConfiguration
 import com.labijie.caching.model.ArgumentObject
 import org.junit.Assert
@@ -119,9 +115,14 @@ class AnnotationClassBeanTester {
 
     @Test
     fun scopeMethodPreventGetTest() {
-        cacheScope(CacheOperation.Get) {
-            val cached = simple.getCached(ArgumentObject())
+        val args = ArgumentObject()
+
+        val r = suppressCache(CacheOperation.Get) {
+            simple.getCached(args)
         }
+        val cached = this.cacheManager.get(args.stringValue, ArgumentObject::class)
+        Assert.assertNotNull(r)
+        Assert.assertNull(cached)
     }
 
 }

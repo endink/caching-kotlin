@@ -1,19 +1,17 @@
 package com.labijie.caching
 
-import com.labijie.caching.CacheException
-
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao
  * @date 2019-03-23
  */
-fun cacheScope(vararg prevent: CacheOperation, action:()->Unit){
+fun <T> suppressCache(vararg options: CacheOperation, action: () -> T): T {
     val current = ICacheScopeHolder.Current
-    if(current != null) {
-        CacheScopeObject(current, prevent = *prevent).use {
+    if (current != null) {
+        return CacheScopeObject(current, suppressed = *options).use {
             action()
         }
-    }else{
+    } else {
         throw CacheException("${ICacheScopeHolder::class.java.simpleName} bean could not be found or it was not ready.")
     }
 }

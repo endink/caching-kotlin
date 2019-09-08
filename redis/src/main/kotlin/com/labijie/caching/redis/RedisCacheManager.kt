@@ -4,6 +4,7 @@ import com.labijie.caching.CacheException
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.configuration.RedisCacheConfig
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.codec.ByteArrayCodec

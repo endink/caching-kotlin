@@ -138,14 +138,17 @@ public interface ISessionService {
 >So, all @CacheXXX have to annotation on implement class method
 
 
-In a nested method, you might want to prevent the cache operation. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
+In a nested method, you might want to disable the cache annotation effect. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
 
+>:bell:**Important:**
+>
+> Only the behavior of annotations is suppressed, and the behavior of using ICacheManager beans is not affected by the "disableCache"
 
 ```kotlin
 
-fun withoutCache(){
+fun noCacheMethod(){
 
-    cacheScope(prevent = CacheOperation.Get){
+    suppressCache(options = CacheOperation.Get){
         val user = userService.getUserById(123456)  
         //...
     }
@@ -156,8 +159,8 @@ fun withoutCache(){
 or
 
 ```kotlin
-@CacheScope(prevent = [CacheOperation.Get])
-fun withoutCache(){
+@SuppressCache(operations = [CacheOperation.Get])
+fun noCacheMethod(){
 
     val user = userService.getUserById(123456)  
     //...

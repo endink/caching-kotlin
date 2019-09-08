@@ -2,7 +2,7 @@ package com.labijie.caching.aspect
 
 import com.labijie.caching.CacheScopeObject
 import com.labijie.caching.ICacheScopeHolder
-import com.labijie.caching.annotation.CacheScope
+import com.labijie.caching.annotation.SuppressCache
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
@@ -22,7 +22,7 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
     }
 
 
-    @Pointcut("@annotation(com.labijie.caching.annotation.CacheScope)")
+    @Pointcut("@annotation(com.labijie.caching.annotation.SuppressCache)")
     private fun cacheScopeMethod(){}
 
     @Around("cacheScopeMethod()")
@@ -30,10 +30,10 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
         val method = (joinPoint.signature as MethodSignature).method
 
         val cacheScope = method.annotations.first {
-            it.annotationClass == CacheScope::class
-        } as CacheScope
+            it.annotationClass == SuppressCache::class
+        } as SuppressCache
 
-        CacheScopeObject(cacheScopeHolder, *cacheScope.prevent).use {
+        CacheScopeObject(cacheScopeHolder, *cacheScope.operations).use {
             return joinPoint.proceed(joinPoint.args)
         }
     }

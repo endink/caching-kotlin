@@ -47,7 +47,7 @@ class AnnotationClassBeanTester {
 
         Assert.assertEquals(data, data2)
 
-        simple.removeCachedList()
+        simple.removeCachedSimple()
 
         val cached = cacheManager.get(SimpleTestingBean.SIMPLE_CACHE_KEY, ArgumentObject::class)
 
@@ -83,6 +83,25 @@ class AnnotationClassBeanTester {
         Assert.assertArrayEquals(list.toTypedArray(), list2.toTypedArray())
 
         simple.removeCachedList()
+
+        val cached = cacheManager.get(SimpleTestingBean.LIST_CACHE_KEY, List::class)
+
+        Assert.assertNull(cached)
+    }
+
+    @Test
+    fun arrayCacheTest(){
+        val list = simple.getCachedArray()
+
+        val list2 = simple.getCachedArray()
+
+        Assert.assertTrue(list !== list2) //引用不相同
+
+        Assert.assertEquals(list.size, list2.size)
+
+        Assert.assertArrayEquals(list, list2)
+
+        simple.removeCachedArray()
 
         val cached = cacheManager.get(SimpleTestingBean.LIST_CACHE_KEY, List::class)
 

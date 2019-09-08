@@ -1,7 +1,7 @@
 package com.labijie.caching.bean
 
 import com.labijie.caching.CacheOperation
-import com.labijie.caching.annotation.CacheScope
+import com.labijie.caching.annotation.SuppressCache
 import com.labijie.caching.model.ArgumentObject
 import org.springframework.stereotype.Component
 
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 open class SimpleScopedBean(private val simple: SimpleTestingBean) {
 
 
-    @CacheScope(prevent = [CacheOperation.Get])
+    @SuppressCache(operations = [CacheOperation.Get])
     fun getWithoutGet(args: ArgumentObject): ArgumentObject {
         return simple.getCached(args)
     }

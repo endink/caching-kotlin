@@ -1,9 +1,14 @@
-package com.labijie.caching.redis
+package com.labijie.caching.redis.serialization
 
 import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.labijie.caching.redis.CacheDataDeserializationException
+import com.labijie.caching.redis.CacheDataSerializationException
+import com.labijie.caching.redis.ICacheDataSerializer
 import org.slf4j.LoggerFactory
+import java.io.IOException
 import java.lang.reflect.Type
 
 /**
@@ -11,7 +16,8 @@ import java.lang.reflect.Type
  * @author Anders Xiao
  * @date 2019-03-20
  */
-class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper? = null) : ICacheDataSerializer {
+class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper? = null) :
+    ICacheDataSerializer {
 
     companion object {
         const val NAME = "json"
@@ -38,18 +44,18 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         try {
             val javaType= this.jacksonMapper.typeFactory.constructType(type)
             return this.jacksonMapper.readValue(data, javaType)
-        } catch (ex: Exception) {
-            LOGGER.error("Redis cache manager serialize fault ( class: $type ).", ex)
-            throw RuntimeException(ex)
+        } catch (ex: IOException) {
+            val error = "Redis cache manager serialize fault ( ser:$NAME class: $type )."
+            throw CacheDataDeserializationException(error, ex)
         }
     }
 
     override fun serializeData(data: Any): ByteArray {
         try {
             return jacksonMapper.writeValueAsBytes(data)
-        } catch (ex: Exception) {
-            LOGGER.error("Redis cache manager serialize fault ( class: ${data::class.java.simpleName} ).", ex)
-            throw RuntimeException(ex)
+        } catch (ex: IOException) {
+            val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
+            throw CacheDataSerializationException(error, ex)
         }
 
     }

@@ -1,6 +1,7 @@
 package com.labijie.caching.redis
 
 import com.labijie.caching.CacheException
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 
 /**
  * Created with IntelliJ IDEA.

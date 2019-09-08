@@ -15,8 +15,8 @@ interface ICacheScopeHolder {
     }
 
     fun cacheRequired(operation: CacheOperation): Boolean {
-        return !isInScope || !(settings?.preventOperations?.contains(operation) ?: false)
+        return !isInScope || !(settings?.suppressedOperations?.contains(operation) ?: false)
     }
 
-    class ScopeSettings(var preventOperations: Array<out CacheOperation> = arrayOf())
+    class ScopeSettings(var suppressedOperations: Array<out CacheOperation> = arrayOf())
 }
