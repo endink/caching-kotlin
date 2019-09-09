@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.serializers.DefaultSerializers
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheException
+import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.serialization.kryo.DateSerializer
 import com.labijie.caching.redis.serialization.kryo.URISerializer
@@ -34,10 +35,10 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
         private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
     }
 
-    private val kryo:PooledKryo
+    private val kryo: PooledKryo
 
     init {
-        kryo = object: PooledKryo(){
+        kryo = object : PooledKryo(kryoOptions.poolSize, kryoOptions.writeBufferSizeBytes) {
             override fun createKryo(): Kryo {
                 return Kryo().apply {
                     this.isRegistrationRequired = kryoOptions.isRegistrationRequired
@@ -57,7 +58,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
                     this.register(BigDecimal::class.java, DefaultSerializers.BigDecimalSerializer(), 9)
                     this.register(BigInteger::class.java, DefaultSerializers.BigIntegerSerializer(), 10)
                     this.register(BitSet::class.java, 11)
-                    this.register(URI::class.java, URISerializer,12)
+                    this.register(URI::class.java, URISerializer, 12)
                     this.register(UUID::class.java, UUIDSerializer, 13)
                     this.register(HashMap::class.java, 14)
                     this.register(ArrayList::class.java, 15)
@@ -82,9 +83,9 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
                     this.register(LinkedHashSet::class.java, 41)
 
 
-                    val a=  1..2
+                    val a = 1..2
                     kryoOptions.registeredClasses.forEach {
-                        if(it.key <= 100){
+                        if (it.key <= 100) {
                             throw CacheException("Kryo register class id must be greater than 100 ( start with 101 )")
                         }
                         this.register(it.value.java, it.key)
@@ -95,15 +96,24 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     }
 
 
-
     override fun deserializeData(type: Type, data: ByteArray): Any? {
-//        val javaType = TypeFactory.defaultInstance().constructType(type)
-//        kryo.deserialize(data, javaType.rawClass)
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
+        val javaType = when (clazz) {
+            List::class.java, MutableList::class.java -> ArrayList::class.java
+            Map::class.java, MutableMap::class.java -> HashMap::class.java
+            Set::class.java, MutableSet::class.java -> HashSet::class.java
+            Collection::class.java, MutableCollection::class.java -> ArrayList::class.java
+            Iterable::class.java, MutableIterable::class.java->ArrayList::class.java
+            else -> clazz
+        }
+        if (javaType.isInterface) {
+            throw CacheDataDeserializationException("Interface type was unsupported when use kryo serializer.")
+        }
+        return kryo.deserialize(data, javaType)
     }
 
     override fun serializeData(data: Any): ByteArray {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return kryo.serialize(data)
     }
 
     override val name: String = NAME

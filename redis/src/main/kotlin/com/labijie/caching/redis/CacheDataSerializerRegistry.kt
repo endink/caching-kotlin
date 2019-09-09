@@ -2,6 +2,9 @@ package com.labijie.caching.redis
 
 import com.labijie.caching.CacheException
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
+import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
+import com.labijie.caching.redis.serialization.KryoOptions
+import org.slf4j.LoggerFactory
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,18 +13,44 @@ import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
  */
 object CacheDataSerializerRegistry {
     private val serializers: MutableMap<String, ICacheDataSerializer> = mutableMapOf()
-    init {
-        this.registerSerializer(JacksonCacheDataSerializer())
-    }
+    private val logger = LoggerFactory.getLogger(CacheDataSerializerRegistry::class.java)
 
-    fun getSerializer(serializerName: String): ICacheDataSerializer {
-        return serializers.getOrDefault(serializerName, null)
-            ?: throw RuntimeException("Cant find cache data serializer with name '$serializerName'")
+    fun getSerializer(name: String): ICacheDataSerializer {
+        val serializerName = name.toLowerCase()
+        val serializer = serializers.getOrDefault(serializerName, null)
+        if (serializer == null) {
+            return when (serializerName) {
+                JacksonCacheDataSerializer.NAME -> {
+                    val ser = JacksonCacheDataSerializer()
+                    serializers[serializerName] = ser
+                    ser
+                }
+                KryoCacheDataSerializer.NAME -> {
+                    val ser = KryoCacheDataSerializer(KryoOptions())
+                    serializers[serializerName] = ser
+                    ser
+                }
+                else -> throw CacheException("Cant find cache data serializer with name '$serializerName'")
+            }
+        } else {
+            return serializer
+        }
+
     }
 
     fun registerSerializer(serializer: ICacheDataSerializer) {
-        if(serializer.name.isBlank()){
+        if (serializer.name.isBlank()) {
             throw CacheException("${ICacheDataSerializer::class.java.simpleName} name must not be null or empty string.")
+        }
+
+        val existed = this.serializers[serializer.name]
+        if (existed != null) {
+            logger.warn(
+                """
+                Cache data serializer named '${serializer.name}' will be replace !!!
+                existed: ${existed::class.java.simpleName}, replaced: ${serializer::class.java.simpleName}
+            """.trimIndent()
+            )
         }
         this.serializers[serializer.name] = serializer
     }

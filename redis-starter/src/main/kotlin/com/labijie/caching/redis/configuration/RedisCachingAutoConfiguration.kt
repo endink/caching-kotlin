@@ -7,6 +7,8 @@ import com.labijie.caching.memory.MemoryCacheOptions
 import com.labijie.caching.redis.CacheDataSerializerRegistry
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.RedisCacheManager
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
+import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -31,7 +33,26 @@ class RedisCachingAutoConfiguration {
     }
 
     @Bean
-    fun redisCacheManager(serializers: ObjectProvider<ICacheDataSerializer>, config: RedisCacheConfig): RedisCacheManager {
+    @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+    fun jacksonCacheDataSerializer(): JacksonCacheDataSerializer {
+        return jacksonCacheDataSerializer()
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(KryoCacheDataSerializer::class)
+    fun kryoCacheDataSerializer(customizers: ObjectProvider<KryoCacheDataSerializerCustomizer>): KryoCacheDataSerializer {
+        customizers.orderedStream().forEach {
+            it.configure()
+        }
+        val options = KryoCacheDataSerializerCustomizer.kryoOptions
+        return KryoCacheDataSerializer(options)
+    }
+
+    @Bean
+    fun redisCacheManager(
+        serializers: ObjectProvider<ICacheDataSerializer>,
+        config: RedisCacheConfig
+    ): RedisCacheManager {
         serializers.orderedStream().forEach {
             CacheDataSerializerRegistry.registerSerializer(it)
         }

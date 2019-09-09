@@ -11,7 +11,7 @@ import kotlin.reflect.KClass
  * @author Anders Xiao
  * @date 2019-02-16
  */
-internal abstract class PooledKryo(poolSize: Int, private val outputInitSizeBytes:Int = 4 * 1024) {
+internal abstract class PooledKryo(poolSize: Int, outputBufferSizeBytes:Int = 4 * 1024) {
 
     class Pooled<TValue> internal constructor(val instance:TValue, private val returnObject:()->Unit):AutoCloseable {
         override fun close() {
@@ -19,12 +19,13 @@ internal abstract class PooledKryo(poolSize: Int, private val outputInitSizeByte
         }
     }
 
-    constructor(poolSize: Int = Runtime.getRuntime().availableProcessors() * 2) : this(poolSize, 1)
+    constructor(poolSize: Int = Runtime.getRuntime().availableProcessors() * 2) : this(poolSize, 4 * 1024)
 
-    private val size = if(poolSize < 0) Runtime.getRuntime().availableProcessors() * 2 else poolSize
+    private val size = if(poolSize <= 0) Runtime.getRuntime().availableProcessors() * 2 else poolSize
     private val kryoPool = newPool(size)
-    private val outputBufferPool = newByteBufferOutputPool(poolSize)
-    private val outputPool = newOutputPool(poolSize)
+    private val outputBufferPool = newByteBufferOutputPool(size)
+    private val outputPool = newOutputPool(size)
+    private val outputInitSizeBytes = outputBufferSizeBytes.coerceAtLeast(512)
 
 
 

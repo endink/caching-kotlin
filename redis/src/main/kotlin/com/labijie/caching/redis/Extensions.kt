@@ -21,8 +21,7 @@ import kotlin.reflect.KClass
  * @date 2019-03-22
  */
 fun RedisException.wrap(error: String): CacheException {
-    val ex = this
-    return when (ex) {
+    return when (val ex = this) {
         is RedisConnectionException -> CacheConnectionException(error, ex)
         else -> CacheException(error, ex)
     }

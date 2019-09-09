@@ -7,6 +7,7 @@ import com.labijie.caching.getOrSet
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
+import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import org.junit.Assert
 import org.junit.Test
 import java.time.Duration
@@ -21,7 +22,7 @@ import kotlin.test.BeforeTest
  * @author Anders Xiao
  * @date 2019-03-20
  */
-class RedisCacheManagerTester {
+abstract class RedisCacheManagerTester {
     private lateinit var redisCache: ICacheManager
 
     @BeforeTest
@@ -36,7 +37,7 @@ class RedisCacheManagerTester {
         this.redisCache.clear()
     }
 
-    protected fun createCache(): RedisCacheManager {
+    private fun createCache(): RedisCacheManager {
         val redisConfig = RedisCacheConfig()
         redisConfig.regions["default"] = RedisRegionOptions(url = "${TestingServer.serverUri}/0")
         redisConfig.regions["region1"] = RedisRegionOptions(url = "${TestingServer.serverUri}/1")
@@ -50,6 +51,8 @@ class RedisCacheManagerTester {
         redisConfig.regions["e"] = RedisRegionOptions(url = "${TestingServer.serverUri}/8")
         redisConfig.regions["f"] = RedisRegionOptions(url = "${TestingServer.serverUri}/9")
 
+        redisConfig.regions.values.forEach { it.serializer = this.getSerializerName() }
+
 //        val cacheManager:ICacheManager? = null
 //        val rm = cacheManager as RedisCacheManager
 //        val redisClient = rm.getClient("regionName")
@@ -58,6 +61,8 @@ class RedisCacheManagerTester {
 
         return RedisCacheManager(redisConfig)
     }
+
+    protected abstract fun getSerializerName():String
 
     /**
      * Method: get(String key, String region)

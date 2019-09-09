@@ -6,9 +6,11 @@ import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.get
 import com.labijie.caching.redis.get
 import com.labijie.caching.redis.testing.bean.SimpleTestingBean
+import com.labijie.caching.redis.testing.configuration.CacheManagerFactory
 import com.labijie.caching.redis.testing.configuration.TestConfiguration
 import com.labijie.caching.redis.testing.model.ArgumentObject
 import org.junit.Assert
+import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -21,21 +23,24 @@ import kotlin.test.BeforeTest
  * @author Anders Xiao
  * @date 2019-03-25
  */
+
 @RunWith(SpringRunner::class)
 //@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 //@DataJdbcTest
 @ContextConfiguration(classes = [TestConfiguration::class, CachingAutoConfiguration::class])
-class AnnotationClassBeanTester {
+abstract class CacheAnnotationTester {
 
     @Autowired
-    private lateinit var simple: SimpleTestingBean
+    protected lateinit var simple: SimpleTestingBean
 
 
     @Autowired
-    private lateinit var cacheManager: ICacheManager
+    private lateinit var cacheManager:ICacheManager
+
+    protected abstract fun getSerializerName():String
 
     @BeforeTest
-    fun init() {
+    fun beforeTest() {
         cacheManager.clear()
     }
 
