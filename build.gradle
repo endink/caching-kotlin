@@ -108,7 +108,7 @@ subprojects {
                 mavenDeployer {
                     repository(url: "file://" + System.properties['user.home'] + "/.m2/repository")
                     pom.project {
-                        artifactId "labijie-caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
+                        artifactId "caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
                         version project.rootProject.version
                     }
                 }
@@ -122,7 +122,6 @@ subprojects {
                     System.out.println("maven deploy user: " + u)
 
                     mavenDeployer {
-
                         if (project.hasProperty('signing.keyId') &&
                                 project.hasProperty('signing.secretKeyRingFile') &&
                                 project.hasProperty("signing.password")) {
@@ -167,16 +166,6 @@ subprojects {
                         repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
                             authentication(userName: u, password: p)
                         }
-
-//                        mavenDeployer {
-//                            snapshotRepository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-snapshots/") {
-//                                authentication(userName: u, password: p)
-//                            }
-//
-//                            repository(url: "http://xstardev.jios.org:26135/nexus/repository/maven-releases/") {
-//                                authentication(userName: u, password: p)
-//                            }
-//                        }
                     }
                 }
             }

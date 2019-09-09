@@ -2,7 +2,9 @@
   "group": [
     {
       "name": "infra.caching.redis",
-      "type": "com.labijie.caching.redis.configuration.RedisCacheConfig"
+      "type": "com.labijie.caching.redis.configuration.RedisCacheConfig",
+      "sourceType": "com.labijie.caching.redis.configuration.RedisCachingAutoConfiguration",
+      "sourceMethod":"redisCacheConfig()"
     }
   ],
   "properties": [
@@ -12,9 +14,52 @@
       "description": "default region for redis caching"
     },
     {
-      "name":"infra.caching.redis.regions",
+      "name": "infra.caching.redis.regions",
       "type": "java.util.Map<java.lang.String, com.labijie.caching.redis.configuration.RedisRegionOptions>",
       "description": "redis cache regions"
+    },
+    {
+      "name": "infra.caching.redis.default-serializer",
+      "type": "java.lang.String",
+      "defaultValue": "json",
+      "description": "cache data serializer"
+    }
+  ],
+  "hints": [
+    {
+      "name": "infra.caching.redis.default-serializer",
+      "values": [
+        {
+          "value": "json"
+        },
+        {
+          "value": "kryo"
+        }
+      ],
+      "providers": [
+        {
+          "name": "any"
+        }
+      ]
+    },
+    {
+      "name": "infra.caching.redis.regions.keys",
+      "providers": [
+        {
+          "name": "any"
+        }
+      ]
+    },
+    {
+      "name": "infra.caching.redis.regions.values",
+      "providers": [
+        {
+          "name": "handle-as",
+          "parameters": {
+            "target": "com.labijie.caching.redis.configuration.RedisRegionOptions"
+          }
+        }
+      ]
     }
   ]
 }

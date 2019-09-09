@@ -1,6 +1,6 @@
 package com.labijie.caching.redis.configuration
 
-import java.time.Duration
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 
 /**
  * Created with IntelliJ IDEA.
@@ -9,5 +9,6 @@ import java.time.Duration
  */
 open class RedisCacheConfig {
     var defaultRegion: String = ""
+    var defaultSerializer: String = JacksonCacheDataSerializer.NAME
     var regions: MutableMap<String, RedisRegionOptions> = mutableMapOf()
 }

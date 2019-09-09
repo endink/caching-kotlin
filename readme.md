@@ -11,6 +11,21 @@ A cache structure that supports expiration on a per-key basis.
 
 All of the jar packages has been uploaded to the maven central.
 
+:smile: **Now, kryo serializer full supported for redis ( since 1.0.6 ) !!**
+
+just configure this:
+
+>infra.caching:redis.regions.default.seriali
+ 
+ infra:
+   caching:
+     redis:
+       regions:
+         default: 
+           url: redis://localhost:6379
+           serializer: kryo
+ 
+ ```
 
 ## add depenedency in gradle project 
 
