@@ -15,7 +15,7 @@ All of the jar packages has been uploaded to the maven central.
 
 just configure this:
 
->infra.caching:redis.regions.default.seriali
+>infra.caching.redis.default-serializer: kryo
  
  infra:
    caching:
