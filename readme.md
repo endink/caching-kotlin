@@ -16,16 +16,7 @@ All of the jar packages has been uploaded to the maven central.
 just configure this:
 
 >infra.caching.redis.default-serializer: kryo
- 
- infra:
-   caching:
-     redis:
-       regions:
-         default: 
-           url: redis://localhost:6379
-           serializer: kryo
- 
- ```
+
 
 ## add depenedency in gradle project 
 
