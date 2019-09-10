@@ -212,6 +212,12 @@ Since we use lettuce as a redis client, the URLs in all of the above examples ar
 
 Jackson is used as a serializer by default in the redis implementation, so the objects you want to cache must can be serialized and deserialized by Jackson (for example, it must contains a none args constructor).
 
+There are two built-in serializers, here is the their configuration names you can use:
+
+**json** (for jackson serializer)
+
+**kryo** (for kryo serializer)
+
 Caching-kotlin also provide the ability to customize serializer:
 
 ```kotlin
@@ -247,7 +253,3 @@ infra:
           serializer: my-serializer
 
 ```
-
-
-
-
