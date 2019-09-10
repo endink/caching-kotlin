@@ -91,7 +91,11 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             val (cli, conn) = createClientAndConnection(config.url)
 
             val n = if (region.isNullOrBlank()) "" else region
-            RedisClientInternal(n, conn, cli, config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME })
+            RedisClientInternal(
+                n,
+                conn,
+                cli,
+                config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME })
         }
         if (client != null && c !== client) {
             client.close()

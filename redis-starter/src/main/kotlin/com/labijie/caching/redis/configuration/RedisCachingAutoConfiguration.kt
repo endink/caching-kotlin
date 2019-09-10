@@ -35,7 +35,7 @@ class RedisCachingAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
     fun jacksonCacheDataSerializer(): JacksonCacheDataSerializer {
-        return jacksonCacheDataSerializer()
+        return JacksonCacheDataSerializer()
     }
 
     @Bean
