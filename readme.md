@@ -1,17 +1,18 @@
 # Labijie Caching ( kotlin )
 >for java see this: https://github.com/endink/caching
 
-### This project is in the process of development....
+### This project was production ready
 
-A cache structure that supports expiration on a per-key basis.
-
+A cache structure that supports expiration on each key.
 
 ![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)
 ![Maven Central](https://img.shields.io/maven-central/v/com.labijie/caching-kotlin.svg?color=orange)
 
 All of the jar packages has been uploaded to the maven central.
 
-:smile: **Now, kryo serializer full supported for redis ( since 1.0.6 ) !!**
+:smile: **Now, kryo serializer was fully supported for redis ( since 1.0.7 ) !!**
+
+## Kryo serialization saves 80% memory than spring redis template (jdk serialization) !! 
 
 just configure this:
 
@@ -23,14 +24,14 @@ just configure this:
 Use memory cahce only:
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin:1.0.0"
+    compile "com.labijie:caching-kotlin:1.0.7"
 }
 ```
 
 for redis:
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin-redis:1.0.0"
+    compile "com.labijie:caching-kotlin-redis:1.0.7"
 }
 ```
 
@@ -59,7 +60,7 @@ import package:
 for memory:
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin-core-starter:1.0"
+    compile "com.labijie:caching-kotlin-core-starter:1.0.7"
 }
 ```
 
@@ -67,24 +68,28 @@ for redis:
 
 ```groovy
 dependencies {
-    compile "com.labijie:caching-kotlin-redis-starter:1.0"
+    compile "com.labijie:caching-kotlin-redis-starter:1.0.7"
 }
 ```
 
+Once the "starter" jar was in classpath, ICacheManager bean can be injected:
+
+```ktolin
+@Autowired
+private lateinit var cacheManager:ICacheManager
+```
 
 Declare method cache using @Cache annotation.
 expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.
 
 ```kotlin
 
-public interface IData {
-
+interface IData {
      fun getData(): Something
 }
 
 @Service
-public class Data : IData {
-
+class Data : IData {
     @Cache(key="'mykey'", expireMills = 5000, region="a")
      fun getData(): Something {
         //...
@@ -98,16 +103,13 @@ SpEL was supported for key attribute and region attribute:
 
 ```kotlin
 
-public interface IUserService {
-
-     fun getUserById(userId: Long):User
-
+interface IUserService {
+    fun getUserById(userId: Long):User
     fun updateUser(user: User)
 }
 
 @Service
-public class UserService : IUserService {
-
+ class UserService : IUserService {
     @Cache(key="#userId", expireMills = 5000, region="'user-' + #userId % 4")
      fun getUserById(userId: Long):User{
          //...
@@ -130,7 +132,6 @@ public interface ISessionService {
 }
 
 public interface ISessionService {
-
     @Cache(key="#userId", expireMills = 3600000, timePolicy = TimePolicy.Sliding)
      fun getUserSession(userId: Long):UserSession{
         //...
@@ -153,10 +154,8 @@ In a nested method, you might want to disable the cache annotation effect. for e
 ```kotlin
 
 fun noCacheMethod(){
-
     suppressCache(options = CacheOperation.Get){
         val user = userService.getUserById(123456)  
-        //...
     }
 }
 
@@ -167,9 +166,7 @@ or
 ```kotlin
 @SuppressCache(operations = [CacheOperation.Get])
 fun noCacheMethod(){
-
     val user = userService.getUserById(123456)  
-    //...
 }
 
 ```
@@ -195,7 +192,6 @@ infra:
 The Redis cache also supports the master-slave redis servers (region name: default):
 
 ```groovy
-
 infra:
   caching:
     redis:
@@ -240,7 +236,6 @@ A serializer has only 2 conditions:
 After you define a serializer, you can use it like follow:
 
 ```groovy
-
 infra:
   caching:
     redis:
