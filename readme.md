@@ -216,8 +216,8 @@ Caching-kotlin also provide the ability to customize serializer:
 
 ```kotlin
 @Component
-class KryoSerializer : ICacheDataSerializer {
-    override val name: String = "kryo"
+class MySerializer : ICacheDataSerializer {
+    override val name: String = "my-serializer"
     
     override fun serializeData(data: Any): String {
         //...
@@ -244,7 +244,7 @@ infra:
       regions:
         default: 
           url: redis://localhost:6379
-          serializer: kryo
+          serializer: my-serializer
 
 ```
 
