@@ -79,6 +79,8 @@ Once the "starter" jar was in classpath, ICacheManager bean can be injected:
 private lateinit var cacheManager:ICacheManager
 ```
 
+#### Annotation Usage
+
 Declare method cache using @Cache annotation.
 expireMills = 5000 indicates that the cache data will expires in 5 seconds after set.
 
