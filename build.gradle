@@ -29,7 +29,7 @@ buildscript {
 allprojects {
 
     group 'com.labijie'
-    version '1.0.7'
+    version '1.0.8'
 
     apply plugin: 'kotlin'
     apply plugin: 'java'
@@ -120,6 +120,7 @@ subprojects {
                 if (u != null && p != null && !u.isEmpty() && !p.isEmpty()) {
 
                     System.out.println("maven deploy user: " + u)
+
 
                     mavenDeployer {
                         if (project.hasProperty('signing.keyId') &&
