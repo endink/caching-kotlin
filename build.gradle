@@ -5,14 +5,15 @@ buildscript {
         slf4j_version = '1.7.28'
         jackson_version = '2.9.8'
         lettuce_version = '5.1.8.RELEASE'
-        netty_version='4.1.38.Final'
-        kryo_version='5.0.0-RC2'
+        netty_version = '4.1.38.Final'
+        kryo_version = '5.0.0-RC2'
 
-        spring_version='5.1.5.RELEASE'
+        spring_version = '5.1.5.RELEASE'
         spring_boot_version = '2.1.3.RELEASE'
         spring_cloud_version = '2.1.0.RELEASE'
 
-        h2_version='1.4.199'
+        nexus_workflow_version = '0.6'
+        h2_version = '1.4.199'
     }
 
     repositories {
@@ -21,8 +22,9 @@ buildscript {
     }
     dependencies {
 //        classpath("org.springframework.boot:spring-boot-gradle-plugin:${spring_boot_version}")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}")
-        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlin_version}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:$kotlin_version")
+        classpath("com.adaptc.gradle:nexus-workflow:$nexus_workflow_version")
     }
 }
 
@@ -112,9 +114,12 @@ subprojects {
                         version project.rootProject.version
                     }
                 }
+
                 //gradle -Dmu="admin" -Dmp="password" uploadArchives
-                def u = System.properties.getProperty("mu")
-                def p = System.properties.getProperty("mp")
+                def u = project.property("oss-releases.username") != null
+                        ? project.property("oss-releases.username") : System.properties.getProperty("mu")
+                def p = project.property("oss-releases.password") != null
+                        ? project.property("oss-releases.password") : System.properties.getProperty("mp")
 
 
                 if (u != null && p != null && !u.isEmpty() && !p.isEmpty()) {
@@ -173,6 +178,8 @@ subprojects {
         }
     }
 }
+
+apply plugin: 'nexus-workflow'
 
 dependencies {
     compile project(":redis-starter")
