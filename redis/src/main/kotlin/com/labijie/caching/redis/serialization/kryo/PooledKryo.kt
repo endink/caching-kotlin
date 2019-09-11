@@ -1,10 +1,9 @@
-package io.xstar.infra.kryo
+package com.labijie.caching.redis.serialization.kryo
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.*
 import com.esotericsoftware.kryo.util.Pool
 import java.nio.ByteBuffer
-import kotlin.reflect.KClass
 
 /**
  * Created with IntelliJ IDEA.

@@ -9,7 +9,7 @@ import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.serialization.kryo.DateSerializer
 import com.labijie.caching.redis.serialization.kryo.URISerializer
 import com.labijie.caching.redis.serialization.kryo.UUIDSerializer
-import io.xstar.infra.kryo.PooledKryo
+import com.labijie.caching.redis.serialization.kryo.PooledKryo
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.math.BigDecimal
