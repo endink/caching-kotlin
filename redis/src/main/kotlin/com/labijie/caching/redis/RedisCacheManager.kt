@@ -8,11 +8,10 @@ import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.codec.ByteArrayCodec
-import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentHashMap
 import io.lettuce.core.masterslave.MasterSlave
+import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
-import java.nio.ByteBuffer
+import java.util.concurrent.ConcurrentHashMap
 
 
 /**
@@ -52,20 +51,31 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         private const val NOT_PRESENT: Long = -1
 
         private val NEW_LINE = System.lineSeparator()
-        val logger = LoggerFactory.getLogger(RedisCacheManager::class.java)
+        private val logger = LoggerFactory.getLogger(RedisCacheManager::class.java)!!
         const val NULL_REGION_NAME = "--"
 
         private fun Long.toByteArray(): ByteArray {
-            val buffer = ByteBuffer.allocate(8)
-            buffer.putLong(0, this)
-            return buffer.array()
+            val b = ByteArray(8)
+            b[7] = (this and 0xff).toByte()
+            b[6] = (this shr 8 and 0xff).toByte()
+            b[5] = (this shr 16 and 0xff).toByte()
+            b[4] = (this shr 24 and 0xff).toByte()
+            b[3] = (this shr 32 and 0xff).toByte()
+            b[2] = (this shr 40 and 0xff).toByte()
+            b[1] = (this shr 48 and 0xff).toByte()
+            b[0] = (this shr 56 and 0xff).toByte()
+            return b
         }
 
-        fun ByteArray.toLong(): Long {
-            val buffer = ByteBuffer.allocate(8)
-            buffer.put(this, 0, 8)
-            buffer.flip()//need flip
-            return buffer.long
+        private fun ByteArray.toLong(): Long {
+            return (this[0].toLong() and 0xff shl 56
+                    or (this[1].toLong() and 0xff shl 48)
+                    or (this[2].toLong() and 0xff shl 40)
+                    or (this[3].toLong() and 0xff shl 32)
+                    or (this[4].toLong() and 0xff shl 24)
+                    or (this[5].toLong() and 0xff shl 16)
+                    or (this[6].toLong() and 0xff shl 8)
+                    or (this[7].toLong() and 0xff shl 0))
         }
     }
 
