@@ -2,6 +2,7 @@ package com.labijie.caching.test
 
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
+import com.labijie.caching.getGenericType
 import com.labijie.caching.memory.MemoryCacheManager
 import org.junit.Assert
 import org.junit.Test
@@ -46,6 +47,39 @@ class MemoryCacheManagerTester {
         val `val` = Any()
         memoryCache.set("a", `val`, null, TimePolicy.Absolute, "b")
         Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, memoryCache.get("a", Any::class.java,"b"))
+    }
+
+    @Test
+    fun testGenericGet(){
+        val t = listOf(1,2,3,4)
+        memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
+
+        val t1  = memoryCache.get("t", getGenericType(List::class.java,Int::class.java),"b")
+        val ttt = t1 as List<Int>
+        Assert.assertNotNull(ttt)
+        Assert.assertTrue(t.minus(ttt).isEmpty())
+    }
+
+    @Test
+    fun testCustomGenericGet(){
+        val t = GenericStub(1)
+        memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
+
+        val t1  = memoryCache.get("t", getGenericType(GenericStub::class.java,Int::class.java),"b")
+        val ttt = t1 as GenericStub<Int>
+        Assert.assertNotNull(ttt)
+        Assert.assertTrue(ttt.item == 1)
+    }
+
+    @Test
+    fun testCustomListGenericGet(){
+        val t = listOf(GenericStub(1))
+        memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
+
+        val t1  = memoryCache.get("t", getGenericType(List::class.java, getGenericType(GenericStub::class.java,Int::class.java)),"b")
+        val ttt = t1 as List<GenericStub<Int>>
+        Assert.assertNotNull(ttt)
+        Assert.assertTrue(ttt[0].item == 1)
     }
 
     /**
