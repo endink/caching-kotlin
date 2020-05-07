@@ -3,6 +3,7 @@ package com.labijie.caching.test
 import com.fasterxml.jackson.core.type.TypeReference
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
+import com.labijie.caching.getGenericType
 import com.labijie.caching.getOrSet
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
@@ -125,6 +126,15 @@ abstract class RedisCacheManagerTester {
         Assert.assertNull("remove 方法未生效。", redisCache.get("c", TestData::class.java,null as String?))
         Assert.assertNull("remove 方法未生效。", redisCache.get("d", TestData::class.java,null as String?))
         Assert.assertNull("remove 方法未生效。", redisCache.get("e", TestData::class.java,""))
+    }
+
+    @Test
+    fun testGeneric(){
+        val lst = listOf(TestData())
+        redisCache.set("b", lst, 5000L, TimePolicy.Absolute, "region2")
+        val lll = redisCache.get("b", getGenericType(List::class.java,TestData::class.java))
+        println(lst)
+        Assert.assertTrue(lst.isNotEmpty())
     }
 
 
