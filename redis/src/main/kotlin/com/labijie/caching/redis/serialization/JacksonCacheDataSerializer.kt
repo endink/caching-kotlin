@@ -37,7 +37,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
     }
 
 
-    override fun deserializeData(type: Type, data: ByteArray): Any? {
+    override fun deserializeData(type: Type, data: String): Any? {
         if (data.isEmpty()) {
             return null
         }
@@ -50,9 +50,9 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         }
     }
 
-    override fun serializeData(data: Any): ByteArray {
+    override fun serializeData(data: Any): String {
         try {
-            return jacksonMapper.writeValueAsBytes(data)
+            return jacksonMapper.writeValueAsString(data)
         } catch (ex: IOException) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
             throw CacheDataSerializationException(error, ex)

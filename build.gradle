@@ -18,6 +18,7 @@ buildscript {
 
     repositories {
         mavenLocal()
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
         mavenCentral()
     }
     dependencies {
@@ -31,7 +32,7 @@ buildscript {
 allprojects {
 
     group 'com.labijie'
-    version '1.0.9'
+    version '1.1.0'
 
     apply plugin: 'kotlin'
     apply plugin: 'java'
@@ -62,6 +63,7 @@ allprojects {
 
     repositories {
         mavenLocal()
+        maven{ url 'http://maven.aliyun.com/nexus/content/groups/public/'}
         mavenCentral()
     }
 
@@ -116,9 +118,9 @@ subprojects {
                 }
 
                 //gradle -Dmu="admin" -Dmp="password" uploadArchives
-                def u = project.property("oss-releases.username") != null
+                def u = project.hasProperty("oss-releases.username")
                         ? project.property("oss-releases.username") : System.properties.getProperty("mu")
-                def p = project.property("oss-releases.password") != null
+                def p = project.hasProperty("oss-releases.password")
                         ? project.property("oss-releases.password") : System.properties.getProperty("mp")
 
 

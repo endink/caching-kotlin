@@ -1,6 +1,7 @@
 package com.labijie.caching.redis.serialization
 
 import com.esotericsoftware.kryo.Kryo
+import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.serializers.DefaultSerializers
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheException
@@ -55,7 +56,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
 		            register(double.class, new DoubleSerializer());
 
                      */
-                    this.register(BigDecimal::class.java, DefaultSerializers.BigDecimalSerializer(), 9)
+                    this.register(BigDecimal::class.java, DefaultSerializers.BigDecimalSerializer() as Serializer<*>, 9)
                     this.register(BigInteger::class.java, DefaultSerializers.BigIntegerSerializer(), 10)
                     this.register(BitSet::class.java, 11)
                     this.register(URI::class.java, URISerializer, 12)
@@ -94,7 +95,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     }
 
 
-    override fun deserializeData(type: Type, data: ByteArray): Any? {
+    override fun deserializeData(type: Type, data: String): Any? {
         val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
         val javaType = when (clazz) {
             List::class.java, MutableList::class.java -> ArrayList::class.java
@@ -107,11 +108,13 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
         if (javaType.isInterface) {
             throw CacheDataDeserializationException("Interface type was unsupported when use kryo serializer.")
         }
-        return kryo.deserialize(data, javaType)
+        val byteArray = Base64.getDecoder().decode(data)
+        return kryo.deserialize(byteArray, javaType)
     }
 
-    override fun serializeData(data: Any): ByteArray {
-        return kryo.serialize(data)
+    override fun serializeData(data: Any): String {
+        val bytes = kryo.serialize(data)
+        return Base64.getEncoder().encodeToString(bytes)
     }
 
     override val name: String = NAME
