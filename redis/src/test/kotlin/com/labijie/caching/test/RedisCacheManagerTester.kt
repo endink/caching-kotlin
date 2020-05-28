@@ -30,6 +30,7 @@ abstract class RedisCacheManagerTester {
     @Throws(Exception::class)
     fun before() {
         this.redisCache = this.createCache()
+        this.redisCache.clear()
     }
 
     @AfterTest
