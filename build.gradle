@@ -183,6 +183,8 @@ subprojects {
 
 apply plugin: 'nexus-workflow'
 
+//usage: gradle nexusStagingRelease
+
 dependencies {
     compile project(":redis-starter")
 }
