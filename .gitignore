@@ -1,7 +1,6 @@
 .gradle/
 build/
 gradle/
-gradlew*
 target/
 bin/
 out/
