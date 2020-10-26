@@ -5,9 +5,7 @@ name: Gradle Build
 
 on:
   push:
-    branches: [ $default-branch ]
-  pull_request:
-    branches: [ $default-branch ]
+    branches: master
 
 jobs:
   build:
