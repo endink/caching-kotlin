@@ -6,6 +6,7 @@ import java.lang.reflect.Type
 fun getGenericType(rowType: Type, vararg actualTypeArguments:Type): ParameterizedType {
     return object : ParameterizedType {
         override fun getActualTypeArguments(): Array<Type> {
+            @Suppress("UNCHECKED_CAST")
             return actualTypeArguments as Array<Type>
         }
 

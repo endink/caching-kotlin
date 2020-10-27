@@ -2,7 +2,11 @@
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
 
 name: Gradle Build
-
+env:
+  GPG_KEY: ${{ secrets.MAVEN_SIGN_KEY }}
+  GPG_PWD: ${{ secrets.MAVEN_SIGN_KEY_PWD }}
+  PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
+  PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
 on:
   push:
     branches: master
@@ -22,14 +26,5 @@ jobs:
       run: gradle clean build -x test
     - name: Publish to Maven Central
       run: gradle uploadArchives
-      env:
-        GPG_KEY: ${{ secrets.MAVEN_SIGN_KEY }}
-        GPG_PWD: ${{ secrets.MAVEN_SIGN_KEY_PWD }}
-        PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
-        PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
     - name: Maven Staging Release
       run: gradle nexusStagingRelease
-      env:
-        ORG_GRADLE_PROJECT_oss-releases.url: https://oss.sonatype.org/index.html#stagingRepositories
-        ORG_GRADLE_PROJECT_oss-releases.username: ${{ secrets.MAVEN_USER_NAME }}
-        ORG_GRADLE_PROJECT_oss-releases.password: ${{ secrets.MAVEN_USER_PWD }}
