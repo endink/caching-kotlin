@@ -8,7 +8,7 @@ package com.labijie.caching
 fun <T> suppressCache(vararg options: CacheOperation, action: () -> T): T {
     val current = ICacheScopeHolder.Current
     if (current != null) {
-        return CacheScopeObject(current, suppressed = *options).use {
+        return CacheScopeObject(current, suppressed = options).use {
             action()
         }
     } else {
