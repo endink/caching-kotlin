@@ -84,14 +84,6 @@ static def canBeSign(Project project) {
     return useGpg || useInMemoryGpg
 }
 
-static def setInMemoryGpg(){
-    def signingKey = System.getenv('GPG_KEY')
-    def password = System.getenv('GPG_PWD')
-    if(isNotNullOrBlank(signingKey) && isNotNullOrBlank(password)) {
-        useInMemoryPgpKeys(signingKey, password)
-    }
-}
-
 subprojects {
     task sourcesJar(type: Jar, dependsOn: classes) {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -113,7 +105,11 @@ subprojects {
 
     signing {
         if (canBeSign(project)) {
-            setInMemoryGpg()
+            def signingKey = System.getenv('GPG_KEY')
+            def password = System.getenv('GPG_PWD')
+            if(isNotNullOrBlank(signingKey) && isNotNullOrBlank(password)) {
+                useInMemoryPgpKeys(signingKey, password)
+            }
             sign configurations.archives
         } else {
             println "Signing information missing/incomplete for ${project.name}"
