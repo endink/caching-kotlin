@@ -113,10 +113,7 @@ subprojects {
 
     signing {
         if (canBeSign(project)) {
-            def signingKey = findProperty("signing.secretKey")
-            if(signingKey != null && signingKey.toString().length() > 0) {
-                useInMemoryPgpKeys(signingKey, signingPassword)
-            }
+            setInMemoryGpg()
             sign configurations.archives
         } else {
             println "Signing information missing/incomplete for ${project.name}"
