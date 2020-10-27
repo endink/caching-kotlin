@@ -20,3 +20,12 @@ jobs:
         java-version: 1.8
     - name: Build with Gradle
       run: gradle clean build -x test
+    - name: Publish to Maven Central
+      run: gradle uploadArchives
+      env:
+        GPG_KEY: ${{ secrets.MAVEN_SIGN_KEY }}
+        GPG_PWD: ${{ secrets.MAVEN_SIGN_KEY_PWD }}
+        PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
+        PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
+    - name: Maven Staging Release
+        run: gradle nexusStagingRelease
