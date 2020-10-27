@@ -29,3 +29,7 @@ jobs:
         PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
     - name: Maven Staging Release
       run: gradle nexusStagingRelease
+      env:
+        ORG_GRADLE_PROJECT_oss-releases.url: https://oss.sonatype.org/index.html#stagingRepositories
+        ORG_GRADLE_PROJECT_oss-releases.username: ${{ secrets.MAVEN_USER_NAME }}
+        ORG_GRADLE_PROJECT_oss-releases.password: ${{ secrets.MAVEN_USER_PWD }}
