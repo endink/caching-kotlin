@@ -28,4 +28,4 @@ jobs:
         PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
         PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
     - name: Maven Staging Release
-        run: gradle nexusStagingRelease
+      run: gradle nexusStagingRelease
