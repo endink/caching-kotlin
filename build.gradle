@@ -139,7 +139,7 @@ subprojects {
 
                 def u = isNotNullOrBlank(System.getenv("PUB_USER"))
                         ? System.getenv("PUB_USER") : System.properties.getProperty("mu")
-                def p =sNotNullOrBlank(System.getenv("PUB_PWD"))
+                def p =isNotNullOrBlank(System.getenv("PUB_PWD"))
                         ? System.getenv("PUB_PWD") : System.properties.getProperty("mp")
 
                 if (isNotNullOrBlank(u) && isNotNullOrBlank(p)) {
