@@ -25,7 +25,7 @@ jobs:
       - name: Build and Publish
         run: |
           echo "Create .gpg key"
-          echo "$MAVEN_SIGN_KEY" > ./release.asc
+          echo "$GPG_KEY" > ./release.asc
           gpg --quiet --output $GITHUB_WORKSPACE/release.gpg --dearmor ./release.asc
           sed -i -e "s,signing.keyId=,signing.keyId=$GPG_KEY_ID,g" gradle.properties
           sed -i -e "s,signing.password=,signing.password=$GPG_PWD,g" gradle.properties
