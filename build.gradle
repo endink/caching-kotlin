@@ -64,7 +64,10 @@ allprojects {
     configurations {
         all*.exclude group: "org.apache.logging.log4j"
     }
-
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
 
     compileKotlin {
         kotlinOptions {

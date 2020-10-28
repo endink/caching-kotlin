@@ -253,3 +253,6 @@ infra:
           serializer: my-serializer
 
 ```
+## Compile Requirements
+
+Gradle Version >= 6
