@@ -15,7 +15,7 @@ buildscript {
         spring_version = '5.2.9.RELEASE'
         spring_dep_mgn_version='1.0.10.RELEASE'
 
-        nexus_workflow_version = '0.6'
+        nexus_staging_version = '0.22.0'
         h2_version = '1.4.199'
     }
 
@@ -30,9 +30,11 @@ buildscript {
 //        classpath("org.springframework.boot:spring-boot-gradle-plugin:${spring_boot_version}")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
         classpath("org.jetbrains.kotlin:kotlin-allopen:$kotlin_version")
-        classpath("com.adaptc.gradle:nexus-workflow:$nexus_workflow_version")
+        classpath("io.codearte.gradle.nexus:gradle-nexus-staging-plugin:$nexus_staging_version")
     }
 }
+
+apply plugin: 'io.codearte.nexus-staging'
 
 allprojects {
 
@@ -138,7 +140,6 @@ subprojects {
     def u = (System.getenv("PUB_USER") ?: getPropertyOrNull(project, "PUB_USER")) ?: System.properties.getProperty("mu")
     def p =(System.getenv("PUB_PWD") ?: getPropertyOrNull(project, "PUB_PWD")) ?: System.properties.getProperty("mp")
 
-
     publishing {
         publications {
             mavenJava(MavenPublication) {
@@ -198,10 +199,12 @@ subprojects {
     }
 }
 
-apply plugin: 'nexus-workflow'
+nexusStaging {
+    def u = (System.getenv("PUB_USER") ?: getPropertyOrNull(project, "PUB_USER")) ?: System.properties.getProperty("mu")
+    def p =(System.getenv("PUB_PWD") ?: getPropertyOrNull(project, "PUB_PWD")) ?: System.properties.getProperty("mp")
 
-dependencies {
-    compile project(":redis-starter")
+    username = u
+    password = p
+    packageGroup = "com.labijie"
+    clientTimeout = Duration.ofSeconds(120)
 }
-
-//local use
