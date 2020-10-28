@@ -8,6 +8,7 @@ env:
   PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
   PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
 on:
+  workflow_dispatch:
   release:
     types: [published]
 
