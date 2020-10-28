@@ -64,6 +64,23 @@ allprojects {
     configurations {
         all*.exclude group: "org.apache.logging.log4j"
     }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        classifier = 'javadoc'
+        from 'build/docs/javadoc'
+    }
+
+    task sourcesJar(type: Jar) {
+        from sourceSets.main.allSource
+        classifier = 'sources'
+    }
+
+    artifacts {
+        archives jar
+        archives javadocJar
+        archives sourcesJar
+    }
+
     java {
         withJavadocJar()
         withSourcesJar()
@@ -108,18 +125,18 @@ static Boolean  isNotNullOrBlank(String s){
 }
 
 static canBeSign(Project project) {
-    def useGpg =  project.hasProperty('signing.keyId') &&  project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile')
-     def useInMemoryGpg =   (isNotNullOrBlank(System.getenv('GPG_KEY')) && isNotNullOrBlank(System.getenv("GPG_PWD")))
-    return useGpg || useInMemoryGpg
+    def useGpg =  project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile') && project.hasProperty('signing.keyId')
+}
+
+static getPropertyOrNull(Project project, String propertyName) {
+    return project.hasProperty(propertyName) ? project.property(propertyName).toString() : null
 }
 
 
 subprojects {
 
-    def u = isNotNullOrBlank(System.getenv("PUB_USER"))
-            ? System.getenv("PUB_USER") : System.properties.getProperty("mu")
-    def p =isNotNullOrBlank(System.getenv("PUB_PWD"))
-            ? System.getenv("PUB_PWD") : System.properties.getProperty("mp")
+    def u = (System.getenv("PUB_USER") ?: getPropertyOrNull(project, "PUB_USER")) ?: System.properties.getProperty("mu")
+    def p =(System.getenv("PUB_PWD") ?: getPropertyOrNull(project, "PUB_PWD")) ?: System.properties.getProperty("mp")
 
 
     publishing {
@@ -159,12 +176,8 @@ subprojects {
 
         signing {
             if (canBeSign(project)) {
-                def signingKey = System.getenv('GPG_KEY')
-                def password = System.getenv('GPG_PWD')
-                if(isNotNullOrBlank(signingKey) && isNotNullOrBlank(password)) {
-                    useInMemoryPgpKeys(signingKey, password)
-                }
                 sign publishing.publications.mavenJava
+                println "Siging for ${project.name}"
             } else {
                 println "Signing information missing/incomplete for ${project.name}"
             }
