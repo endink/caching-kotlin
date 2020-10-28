@@ -26,6 +26,7 @@ jobs:
         run: |
           echo "Create .gpg key"
           echo "$GPG_KEY_ID" > ./release.asc
+          cat ./release.asc
           gpg --quiet --output $GITHUB_WORKSPACE/release.gpg --dearmor ./release.asc
           sed -i -e "s,sonatypeUsername=,sonatypeUsername=$SONATYPE_USERNAME,g" gradle.properties
           sed -i -e "s,sonatypePassword=,sonatypePassword=$SONATYPE_PASSWORD,g" gradle.properties
