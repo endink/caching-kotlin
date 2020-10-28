@@ -51,10 +51,6 @@ allprojects {
         }
     }
 
-    project.ext["oss-releases.url"] = "https://oss.sonatype.org/index.html#stagingRepositories"
-    project.ext["oss-releases.username"] = System.getenv("PUB_USER")
-    project.ext["oss-releases.password"] = System.getenv("PUB_PWD")
-
     apply plugin: 'kotlin'
     apply plugin: 'signing'
     apply plugin: 'kotlin-spring'
@@ -127,7 +123,7 @@ static Boolean  isNotNullOrBlank(String s){
 }
 
 static canBeSign(Project project) {
-    def useGpg =  project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile') && project.hasProperty('signing.keyId')
+    return project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile') && project.hasProperty('signing.keyId')
 }
 
 static getPropertyOrNull(Project project, String propertyName) {
