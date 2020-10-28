@@ -36,17 +36,17 @@ buildscript {
 allprojects {
 
     group 'com.labijie'
-    version '1.2.1'
+    version '1.2.0'
 
     project.ext["oss-releases.url"] = "https://oss.sonatype.org/index.html#stagingRepositories"
     project.ext["oss-releases.username"] = System.getenv("PUB_USER")
     project.ext["oss-releases.password"] = System.getenv("PUB_PWD")
 
     apply plugin: 'kotlin'
-    apply plugin: 'java'
-    apply plugin: 'maven'
     apply plugin: 'signing'
     apply plugin: 'kotlin-spring'
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
 
     sourceCompatibility = 1.8
 
@@ -82,112 +82,85 @@ allprojects {
 }
 
 
-static def Boolean  isNotNullOrBlank(String s){
+static Boolean  isNotNullOrBlank(String s){
     return !(s == null || s.trim().length() == 0)
 }
 
-static def canBeSign(Project project) {
+static canBeSign(Project project) {
     def useGpg =  project.hasProperty('signing.keyId') &&  project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile')
      def useInMemoryGpg =   (isNotNullOrBlank(System.getenv('GPG_KEY')) && isNotNullOrBlank(System.getenv("GPG_PWD")))
     return useGpg || useInMemoryGpg
 }
 
+
 subprojects {
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        classifier 'sources'
-        from sourceSets.main.allSource
+
+    def u = isNotNullOrBlank(System.getenv("PUB_USER"))
+            ? System.getenv("PUB_USER") : System.properties.getProperty("mu")
+    def p =isNotNullOrBlank(System.getenv("PUB_PWD"))
+            ? System.getenv("PUB_PWD") : System.properties.getProperty("mp")
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
     }
 
-    task javadocJar(type: Jar) {
-        classifier = "javadoc"
-        from javadoc
-    }
-
-    artifacts {
-        //archives jar
-        archives sourcesJar
-        archives javadocJar
-    }
-
-
-
-    signing {
-        if (canBeSign(project)) {
-            def signingKey = System.getenv('GPG_KEY')
-            def password = System.getenv('GPG_PWD')
-            if(isNotNullOrBlank(signingKey) && isNotNullOrBlank(password)) {
-                useInMemoryPgpKeys(signingKey, password)
-            }
-            sign configurations.archives
-        } else {
-            println "Signing information missing/incomplete for ${project.name}"
-        }
-    }
-    //sign configurations.archives
-
-    uploadArchives {
-        if (!project.name.startsWith("dummy")) {
-            System.out.println("deployer --->" + project.name)
-
-            repositories {
-                mavenDeployer {
-                    repository(url: "file://" + System.properties['user.home'] + "/.m2/repository")
-                    pom.project {
-                        artifactId "caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
-                        version project.rootProject.version
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = project.name == "core" ? "caching-kotlin" : "caching-kotlin-" + project.name
+                from components.java
+                pom {
+                    name = project.name
+                    description = 'labijie caching library'
+                    url = 'https://github.com/endink/caching-kotlin'
+//                    properties = [
+//                            myProp: "value",
+//                            "prop.with.dots": "anotherValue"
+//                    ]
+                    licenses {
+                        license {
+                            name = 'The Apache License, Version 2.0'
+                            url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'labijie.com'
+                            name = 'AndersXiao'
+                            email = 'sharping@outlook.com'
+                        }
+                    }
+                    scm {
+                        url = 'https://github.com/endink/caching-kotlin'
+                        connection = 'scm:git@github.com:endink/caching-kotlin.git'
+                        developerConnection = 'git@github.com:endink/caching-kotlin.git'
                     }
                 }
+            }
+        }
 
-                def u = isNotNullOrBlank(System.getenv("PUB_USER"))
-                        ? System.getenv("PUB_USER") : System.properties.getProperty("mu")
-                def p =isNotNullOrBlank(System.getenv("PUB_PWD"))
-                        ? System.getenv("PUB_PWD") : System.properties.getProperty("mp")
+        signing {
+            if (canBeSign(project)) {
+                def signingKey = System.getenv('GPG_KEY')
+                def password = System.getenv('GPG_PWD')
+                if(isNotNullOrBlank(signingKey) && isNotNullOrBlank(password)) {
+                    useInMemoryPgpKeys(signingKey, password)
+                }
+                sign publishing.publications.mavenJava
+            } else {
+                println "Signing information missing/incomplete for ${project.name}"
+            }
+        }
 
-                if (isNotNullOrBlank(u) && isNotNullOrBlank(p)) {
-                    mavenDeployer {
-                        if (canBeSign(project)) {
-                            beforeDeployment { MavenDeployment deployment ->
-                                System.out.println("sign package... ")
-                                signing.signPom(deployment)
-                            }
-                        }
-
-                        pom.project {
-                            name project.name
-                            description 'labijie caching library'
-                            artifactId "caching-kotlin" + (project.name == "core" ? "" : "-" + project.name)
-                            version project.rootProject.version
-                            url 'https://github.com/endink/caching-kotlin'
-                            licenses {
-                                license {
-                                    name 'The Apache Software License, Version 2.0'
-                                    url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                                    distribution 'labijie.com'
-                                }
-                            }
-                            scm {
-                                url 'scm:git@github.com:endink/caching-kotlin.git'
-                                connection 'scm:git@github.com:endink/caching-kotlin.git'
-                                developerConnection 'git@github.com:endink/caching-kotlin.git'
-                            }
-
-                            developers {
-                                developer {
-                                    id 'labijie.com'
-                                    name 'AndersXiao'
-                                    email 'sharping@outlook.com'
-                                }
-                            }
-                        }
-
-                        snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots") {
-                            authentication(userName: u, password: p)
-                        }
-
-                        repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2") {
-                            authentication(userName: u, password: p)
-                        }
+        repositories {
+            if (isNotNullOrBlank(u) && isNotNullOrBlank(p)) {
+                maven {
+                    name = "OSSRH"
+                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    credentials {
+                        username = u
+                        password = p
                     }
                 }
             }
@@ -200,3 +173,5 @@ apply plugin: 'nexus-workflow'
 dependencies {
     compile project(":redis-starter")
 }
+
+//local use
