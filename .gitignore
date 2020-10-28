@@ -7,7 +7,6 @@ bin/
 out/
 application-local.yml
 application-dev.yml
-gradle.properties
 
 ### Folder view configuration files ###
 .DS_Store
