@@ -4,8 +4,8 @@ import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.getGenericType
 import com.labijie.caching.memory.MemoryCacheManager
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import kotlin.test.*
 import java.lang.reflect.InvocationTargetException
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -21,6 +21,7 @@ class MemoryCacheManagerTester {
     @BeforeTest
     @Throws(Exception::class)
     fun before() {
+
         this.memoryCache = this.createCache()
     }
 
@@ -38,7 +39,6 @@ class MemoryCacheManagerTester {
     @Test
     @Throws(Exception::class)
     fun testGet() {
-
         Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("a", Any::class.java,"b"))
         Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("b", Any::class.java,"a"))
         Assert.assertNull("当值不存在时 get 应为 null", memoryCache.get("a", Any::class.java,""))
@@ -56,8 +56,8 @@ class MemoryCacheManagerTester {
 
         val t1  = memoryCache.get("t", getGenericType(List::class.java,Int::class.java),"b")
         val ttt = t1 as List<Int>
-        Assert.assertNotNull(ttt)
-        Assert.assertTrue(t.minus(ttt).isEmpty())
+        Assertions.assertNotNull(ttt)
+        Assertions.assertTrue(t.minus(ttt).isEmpty())
     }
 
     @Test
@@ -67,8 +67,8 @@ class MemoryCacheManagerTester {
 
         val t1  = memoryCache.get("t", getGenericType(GenericStub::class.java,Int::class.java),"b")
         val ttt = t1 as GenericStub<Int>
-        Assert.assertNotNull(ttt)
-        Assert.assertTrue(ttt.item == 1)
+        Assertions.assertNotNull(ttt)
+        Assertions.assertTrue(ttt.item == 1)
     }
 
     @Test
@@ -78,8 +78,8 @@ class MemoryCacheManagerTester {
 
         val t1  = memoryCache.get("t", getGenericType(List::class.java, getGenericType(GenericStub::class.java,Int::class.java)),"b")
         val ttt = t1 as List<GenericStub<Int>>
-        Assert.assertNotNull(ttt)
-        Assert.assertTrue(ttt[0].item == 1)
+        Assertions.assertNotNull(ttt)
+        Assertions.assertTrue(ttt[0].item == 1)
     }
 
     /**
@@ -188,7 +188,7 @@ class MemoryCacheManagerTester {
                 MemoryCacheManager::class.java.getDeclaredMethod("getRegionNameFormFullKey", String::class.java)
             method.isAccessible = true
             val regionName = method.invoke(memoryCache, "a|b") as String
-            Assert.assertEquals("a", regionName)
+            Assertions.assertEquals("a", regionName)
 
         } catch (e: NoSuchMethodException) {
         } catch (e: IllegalAccessException) {

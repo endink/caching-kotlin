@@ -8,8 +8,8 @@ env:
   PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
   PUB_PWD: ${{ secrets.MAVEN_USER_PWD }}
 on:
-  push:
-    branches: master
+  release:
+    types: [published]
 
 jobs:
   build:

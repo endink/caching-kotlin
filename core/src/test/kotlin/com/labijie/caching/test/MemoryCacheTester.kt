@@ -6,8 +6,8 @@ import com.labijie.caching.memory.CacheEntry
 import com.labijie.caching.memory.MemoryCache
 import com.labijie.caching.memory.MemoryCacheEntryOptions
 import com.labijie.caching.memory.MemoryCacheOptions
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import java.io.Closeable
 import java.lang.IllegalArgumentException
 import java.lang.reflect.InvocationTargetException
@@ -217,11 +217,11 @@ class MemoryCacheTester {
     /**
      * Method: checkClosed()
      */
-    @Test(expected = CacheException::class)
-    @Throws(Exception::class)
     fun testCheckClosed() {
-        memoryCache.close()
-        memoryCache.set("a", Any(), 1000L)
+        Assertions.assertThrows(CacheException::class.java) {
+            memoryCache.close()
+            memoryCache.set("a", Any(), 1000L)
+        }
     }
 
     /**

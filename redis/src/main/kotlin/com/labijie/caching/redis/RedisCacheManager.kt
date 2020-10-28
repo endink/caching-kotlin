@@ -8,7 +8,7 @@ import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.codec.StringCodec
-import io.lettuce.core.masterslave.MasterSlave
+import io.lettuce.core.masterreplica.MasterReplica
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
@@ -127,11 +127,11 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                 RedisURI.create(it.trim())
             }
             val client = RedisClient.create()
-            val connection = MasterSlave.connect(
+            val connection = MasterReplica.connect(
                 client, StringCodec(),
                 redisUrls
             )
-            connection.readFrom = ReadFrom.SLAVE_PREFERRED
+            connection.readFrom = ReadFrom.REPLICA_PREFERRED
             return Pair(client, connection)
         }
     }
@@ -175,7 +175,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             )
         } else {
             command.hmget(
-                    key,
+                key,
                 ABSOLUTE_EXPIRATION_KEY,
                 SLIDING_EXPIRATION_KEY
             )
@@ -251,7 +251,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         val creationTime = System.currentTimeMillis()
 
         val values = arrayOf(
-             (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString(),
+            (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString(),
             (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString(),
             (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString(),
             this.serializeData(client.serializer, data),

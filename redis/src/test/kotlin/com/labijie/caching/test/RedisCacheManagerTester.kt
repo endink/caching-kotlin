@@ -8,9 +8,8 @@ import com.labijie.caching.getOrSet
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
-import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.*
 import java.util.function.Function
@@ -72,7 +71,6 @@ abstract class RedisCacheManagerTester {
     @Test
     @Throws(Exception::class)
     fun testGet() {
-
         Assert.assertNull("当值不存在时 get 应为 null", redisCache.get("a", String::class.java,"b"))
         Assert.assertNull( "当值不存在时 get 应为 null", redisCache.get("b", String::class.java,"a"))
         Assert.assertNull("当值不存在时 get 应为 null",redisCache.get("a", String::class.java,""))
@@ -135,7 +133,7 @@ abstract class RedisCacheManagerTester {
         redisCache.set("b", lst, 5000L, TimePolicy.Absolute, "region2")
         val lll = redisCache.get("b", getGenericType(List::class.java,TestData::class.java))
         println(lst)
-        Assert.assertTrue(lst.isNotEmpty())
+        Assertions.assertTrue(lst.isNotEmpty())
     }
 
 
@@ -195,12 +193,12 @@ abstract class RedisCacheManagerTester {
 
         val tr = object: TypeReference<List<TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assert.assertNotNull(value)
+        Assertions.assertNotNull(value)
 
         val listData = value as List<*>
-        Assert.assertEquals(3, listData.size)
+        Assertions.assertEquals(3, listData.size)
 
-        Assert.assertArrayEquals(list.toTypedArray(), listData.toTypedArray())
+        Assertions.assertArrayEquals(list.toTypedArray(), listData.toTypedArray())
     }
 
     @Test
@@ -215,12 +213,12 @@ abstract class RedisCacheManagerTester {
 
         val tr = object: TypeReference<Map<String, TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assert.assertNotNull(value)
+        Assertions.assertNotNull(value)
 
         val listData = value as Map<*, *>
-        Assert.assertEquals(3, listData.size)
+        Assertions.assertEquals(3, listData.size)
 
-        Assert.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
+        Assertions.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
     }
 
     @Test
@@ -243,20 +241,20 @@ abstract class RedisCacheManagerTester {
             map2
         }
 
-        Assert.assertTrue(map === data)
+        Assertions.assertTrue(map === data)
 
-        Assert.assertNotNull(data)
-        Assert.assertNotNull(data2)
-        Assert.assertArrayEquals(data!!.toList().toTypedArray(), data2!!.toList().toTypedArray())
+        Assertions.assertNotNull(data)
+        Assertions.assertNotNull(data2)
+        Assertions.assertArrayEquals(data!!.toList().toTypedArray(), data2!!.toList().toTypedArray())
 
         val tr = object: TypeReference<Map<String, TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assert.assertNotNull(value)
+        Assertions.assertNotNull(value)
 
         val listData = value as Map<*, *>
-        Assert.assertEquals(3, listData.size)
+        Assertions.assertEquals(3, listData.size)
 
-        Assert.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
+        Assertions.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
     }
 
     private data class TestData(

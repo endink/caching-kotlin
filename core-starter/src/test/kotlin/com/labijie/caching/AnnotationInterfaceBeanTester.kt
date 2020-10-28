@@ -1,18 +1,15 @@
 package com.labijie.caching
 
-import com.labijie.caching.ICacheManager
-import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.get
 import com.labijie.caching.bean.ISimpleInterface
-import com.labijie.caching.bean.SimpleTestingBean
+import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.configuration.TestConfiguration
 import com.labijie.caching.model.ArgumentObject
-import org.junit.Assert
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import kotlin.test.BeforeTest
 
 /**
@@ -20,7 +17,7 @@ import kotlin.test.BeforeTest
  * @author Anders Xiao
  * @date 2019-03-25
  */
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 @ContextConfiguration(classes = [CachingAutoConfiguration::class, TestConfiguration::class])
 class AnnotationInterfaceBeanTester {
 
@@ -42,6 +39,6 @@ class AnnotationInterfaceBeanTester {
 
         val cached = this.cacheManager.get(args.stringValue, ArgumentObject::class)
         // it will be no cache because interface annotation
-        Assert.assertNull(cached)
+        Assertions.assertNull(cached)
     }
 }

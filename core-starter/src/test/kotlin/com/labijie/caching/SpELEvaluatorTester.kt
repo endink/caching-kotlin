@@ -4,8 +4,8 @@ import com.labijie.caching.expression.SpELContext
 import com.labijie.caching.expression.SpELEvaluator
 import com.labijie.caching.model.ArgumentObject
 import com.labijie.caching.model.MethodObject
-import org.junit.Assert
-import org.junit.Test
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import kotlin.reflect.jvm.javaMethod
 
@@ -28,9 +28,9 @@ class SpELEvaluatorTester {
         val context = SpELContext(method.javaMethod!!, arrayOf(intValue, stringValue, decimalValue))
         val evaluator = SpELEvaluator(context)
 
-        Assert.assertEquals(intValue.toString(), evaluator.evaluate("#intValue"))
-        Assert.assertEquals(stringValue, evaluator.evaluate("#stringValue"))
-        Assert.assertEquals(decimalValue.toString(), evaluator.evaluate("#decimalValue"))
+        Assertions.assertEquals(intValue.toString(), evaluator.evaluate("#intValue"))
+        Assertions.assertEquals(stringValue, evaluator.evaluate("#stringValue"))
+        Assertions.assertEquals(decimalValue.toString(), evaluator.evaluate("#decimalValue"))
     }
 
     @Test
@@ -43,8 +43,8 @@ class SpELEvaluatorTester {
         val context = SpELContext(method.javaMethod!!, arrayOf(args))
         val evaluator = SpELEvaluator(context)
 
-        Assert.assertEquals(args.longValue.toString(), evaluator.evaluate("#obj.longValue"))
-        Assert.assertEquals(args.stringValue, evaluator.evaluate("#obj.stringValue"))
+        Assertions.assertEquals(args.longValue.toString(), evaluator.evaluate("#obj.longValue"))
+        Assertions.assertEquals(args.stringValue, evaluator.evaluate("#obj.stringValue"))
     }
 
     @Test
@@ -58,12 +58,12 @@ class SpELEvaluatorTester {
         val context = SpELContext(method.javaMethod!!, arrayOf(intValue, args, null))
         val evaluator = SpELEvaluator(context)
 
-        Assert.assertEquals(intValue.toString(), evaluator.evaluate("#arg1"))
-        Assert.assertEquals((intValue * 10).toString(), evaluator.evaluate("#arg1 * 10"))
-        Assert.assertEquals(args.stringValue, evaluator.evaluate("#arg2.stringValue"))
-        Assert.assertEquals("", evaluator.evaluate("#arg3"))
+        Assertions.assertEquals(intValue.toString(), evaluator.evaluate("#arg1"))
+        Assertions.assertEquals((intValue * 10).toString(), evaluator.evaluate("#arg1 * 10"))
+        Assertions.assertEquals(args.stringValue, evaluator.evaluate("#arg2.stringValue"))
+        Assertions.assertEquals("", evaluator.evaluate("#arg3"))
 
         val value = evaluator.evaluate("'aaa' + (#arg1 * 10 - 1)")
-        Assert.assertEquals("aaa${(intValue * 10 - 1)}", value)
+        Assertions.assertEquals("aaa${(intValue * 10 - 1)}", value)
     }
 }

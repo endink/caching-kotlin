@@ -1,27 +1,22 @@
 package com.labijie.caching
 
-import com.labijie.caching.ICacheManager
-import com.labijie.caching.configuration.CachingAutoConfiguration
-import com.labijie.caching.get
-import com.labijie.caching.bean.SimpleScopedBean
-import com.labijie.caching.bean.SimpleTestingBean
 import com.labijie.caching.bean.TransactionalBean
-import com.labijie.caching.configuration.TransactionalConfiguration
+import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.configuration.TestConfiguration
+import com.labijie.caching.configuration.TransactionalConfiguration
 import com.labijie.caching.orm.TestEntity
-import org.junit.Assert
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
-import org.springframework.core.io.ResourceLoader
+import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.jdbc.JdbcTestUtils
 import org.springframework.transaction.UnexpectedRollbackException
-import java.lang.RuntimeException
-import kotlin.test.AfterTest
+import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -30,9 +25,10 @@ import kotlin.test.Test
  * @author Anders Xiao
  * @date 2019-03-25
  */
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 //@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DataJdbcTest
+@Transactional(propagation = Propagation.NEVER)
 @ContextConfiguration(classes = [CachingAutoConfiguration::class, TestConfiguration::class, TransactionalConfiguration::class])
 class TransactionalHookTester {
 
@@ -59,16 +55,16 @@ class TransactionalHookTester {
         val data = TestEntity()
         transactionalBean.insert(data)
 
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
 
         val data2 = transactionalBean.getCached(data.id)
         val data3 = transactionalBean.getCached(data.id)
 
-        Assert.assertEquals(data, data2)
-        Assert.assertEquals(data, data3)
+        Assertions.assertEquals(data, data2)
+        Assertions.assertEquals(data, data3)
 
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertEquals(data, cached)
+        Assertions.assertEquals(data, cached)
     }
 
     @Test
@@ -76,25 +72,25 @@ class TransactionalHookTester {
         val data = TestEntity()
         transactionalBean.insert(data)
 
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
 
         transactionalBean.getCached(data.id)
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertEquals(data, cached)
+        Assertions.assertEquals(data, cached)
 
         val count = transactionalBean.removeCacheDelay2s(data.id)
 
-        Assert.assertEquals(1, count)
+        Assertions.assertEquals(1, count)
         var existed = cacheManager.get(data.id.toString(), TestEntity::class)
 
-        Assert.assertNotNull(existed)
+        Assertions.assertNotNull(existed)
 
         Thread.sleep(3000)
         existed = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertNull(existed)
+        Assertions.assertNull(existed)
 
         val result = transactionalBean.getCached(data.id)
-        Assert.assertNull(result)
+        Assertions.assertNull(result)
     }
 
     @Test
@@ -102,16 +98,16 @@ class TransactionalHookTester {
         val data = TestEntity()
         transactionalBean.insert(data)
 
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
 
         transactionalBean.getCached(data.id)
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertEquals(data, cached)
+        Assertions.assertEquals(data, cached)
 
         transactionalBean.noTransaction(data.id)
         Thread.sleep(3000)
         val existed = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertNull(existed)
+        Assertions.assertNull(existed)
     }
 
     @Test
@@ -119,11 +115,11 @@ class TransactionalHookTester {
         val data = TestEntity()
         transactionalBean.insert(data)
 
-        Assert.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
+        Assertions.assertEquals(1, JdbcTestUtils.countRowsInTable(jdbcTemplate, "test"))
 
         transactionalBean.getCached(data.id)
         val cached = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertEquals(data, cached)
+        Assertions.assertEquals(data, cached)
 
         try {
             transactionalBean.transactionRollback(data.id)
@@ -132,6 +128,6 @@ class TransactionalHookTester {
         }
         Thread.sleep(3000)
         val existed = cacheManager.get(data.id.toString(), TestEntity::class)
-        Assert.assertEquals(cached, existed)
+        Assertions.assertEquals(cached, existed)
     }
 }

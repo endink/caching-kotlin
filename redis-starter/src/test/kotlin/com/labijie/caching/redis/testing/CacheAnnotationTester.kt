@@ -9,12 +9,12 @@ import com.labijie.caching.redis.testing.bean.SimpleTestingBean
 import com.labijie.caching.redis.testing.configuration.CacheManagerFactory
 import com.labijie.caching.redis.testing.configuration.TestConfiguration
 import com.labijie.caching.redis.testing.model.ArgumentObject
-import org.junit.Assert
-import org.junit.BeforeClass
-import org.junit.Test
-import org.junit.runner.RunWith
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ContextConfiguration
+import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.springframework.test.context.junit4.SpringRunner
 import kotlin.test.BeforeTest
 
@@ -24,7 +24,7 @@ import kotlin.test.BeforeTest
  * @date 2019-03-25
  */
 
-@RunWith(SpringRunner::class)
+@ExtendWith(SpringExtension::class)
 //@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 //@DataJdbcTest
 @ContextConfiguration(classes = [TestConfiguration::class, CachingAutoConfiguration::class])
@@ -50,13 +50,13 @@ abstract class CacheAnnotationTester {
 
         val data2 = simple.getCachedSimple()
 
-        Assert.assertEquals(data, data2)
+        Assertions.assertEquals(data, data2)
 
         simple.removeCachedSimple()
 
         val cached = cacheManager.get(SimpleTestingBean.SIMPLE_CACHE_KEY, ArgumentObject::class)
 
-        Assert.assertNull(cached)
+        Assertions.assertNull(cached)
     }
 
     @Test
@@ -65,14 +65,14 @@ abstract class CacheAnnotationTester {
 
         val data2 = simple.getCachedMap()
 
-        Assert.assertEquals(data.size, data2.size)
-        Assert.assertArrayEquals(data.toList().toTypedArray(), data2.toList().toTypedArray())
+        Assertions.assertEquals(data.size, data2.size)
+        Assertions.assertArrayEquals(data.toList().toTypedArray(), data2.toList().toTypedArray())
 
         simple.removeCachedMap()
 
         val cached = cacheManager.get(SimpleTestingBean.MAP_CACHE_KEY, object:TypeReference<Map<String, ArgumentObject>>() {})
 
-        Assert.assertNull(cached)
+        Assertions.assertNull(cached)
     }
 
     @Test
@@ -81,17 +81,17 @@ abstract class CacheAnnotationTester {
 
         val list2 = simple.getCachedList()
 
-        Assert.assertTrue(list !== list2) //引用不相同
+        Assertions.assertTrue(list !== list2) //引用不相同
 
-        Assert.assertEquals(list.size, list2.size)
+        Assertions.assertEquals(list.size, list2.size)
 
-        Assert.assertArrayEquals(list.toTypedArray(), list2.toTypedArray())
+        Assertions.assertArrayEquals(list.toTypedArray(), list2.toTypedArray())
 
         simple.removeCachedList()
 
         val cached = cacheManager.get(SimpleTestingBean.LIST_CACHE_KEY, List::class)
 
-        Assert.assertNull(cached)
+        Assertions.assertNull(cached)
     }
 
     @Test
@@ -100,17 +100,17 @@ abstract class CacheAnnotationTester {
 
         val list2 = simple.getCachedArray()
 
-        Assert.assertTrue(list !== list2) //引用不相同
+        Assertions.assertTrue(list !== list2) //引用不相同
 
-        Assert.assertEquals(list.size, list2.size)
+        Assertions.assertEquals(list.size, list2.size)
 
-        Assert.assertArrayEquals(list, list2)
+        Assertions.assertArrayEquals(list, list2)
 
         simple.removeCachedArray()
 
         val cached = cacheManager.get(SimpleTestingBean.LIST_CACHE_KEY, List::class)
 
-        Assert.assertNull(cached)
+        Assertions.assertNull(cached)
     }
 
 }
