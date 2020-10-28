@@ -206,5 +206,4 @@ nexusStaging {
     username = u
     password = p
     packageGroup = "com.labijie"
-    clientTimeout = Duration.ofSeconds(120)
 }
