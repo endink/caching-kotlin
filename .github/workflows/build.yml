@@ -3,6 +3,7 @@
 
 name: Gradle Build
 env:
+  GPG_KEY_ID: ${{ secrets.MAVEN_SIGN_KEY_ID }}
   GPG_KEY: ${{ secrets.MAVEN_SIGN_KEY }}
   GPG_PWD: ${{ secrets.MAVEN_SIGN_KEY_PWD }}
   PUB_USER: ${{ secrets.MAVEN_USER_NAME }}
