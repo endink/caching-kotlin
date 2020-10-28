@@ -23,8 +23,6 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 1.8
-    - name: Build with Gradle
-      run: gradle clean build -x test
     - name: PGP Prepare
       run: |
        echo "Create .gpg key"
@@ -34,5 +32,7 @@ jobs:
        sed -i -e "s,signing.password=,signing.password=$GPG_PWD,g" gradle.properties
        sed -i -e "s,signing.secretKeyRingFile=,signing.secretKeyRingFile=$GITHUB_WORKSPACE/release.gpg,g" gradle.properties
        cat gradle.properties
+    - name: Build with Gradle
+      run: gradle clean build -x test
     - name: Publish to Maven Central
       run: gradle publish
