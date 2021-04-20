@@ -118,23 +118,27 @@ allprojects {
 }
 
 
-static Boolean  isNotNullOrBlank(String s){
-    return !(s == null || s.trim().length() == 0)
+static Boolean  isNotNullOrBlank(Object s){
+    return !(s == null || s.toString().trim().length() == 0)
 }
 
 static canBeSign(Project project) {
-    return project.hasProperty("signing.password") && project.hasProperty('signing.secretKeyRingFile') && project.hasProperty('signing.keyId')
+    return isNotNullOrBlank(project.findProperty("signing.password")) &&
+            isNotNullOrBlank(project.findProperty('signing.secretKeyRingFile')) &&
+            isNotNullOrBlank(project.findProperty('signing.keyId'))
 }
 
-static getPropertyOrNull(Project project, String propertyName) {
-    return project.hasProperty(propertyName) ? project.property(propertyName).toString() : null
+static getPropertyOrCmdArgs(Project project, String propertyName, String cmdArgName) {
+    def propertyValue = project.hasProperty(propertyName) ? project.property(propertyName).toString() : null
+    def v = (System.properties.getProperty(cmdArgName) ?: propertyValue ) ?: System.getenv(propertyName)
+    return isNotNullOrBlank(v) ? v : null
 }
 
 
 subprojects {
 
-    def u = (System.getenv("PUB_USER") ?: getPropertyOrNull(project, "PUB_USER")) ?: System.properties.getProperty("mu")
-    def p =(System.getenv("PUB_PWD") ?: getPropertyOrNull(project, "PUB_PWD")) ?: System.properties.getProperty("mp")
+    def u = getPropertyOrCmdArgs(project, "PUB_USER", "u")
+    def p =getPropertyOrCmdArgs(project, "PUB_PWD", "p")
 
     publishing {
         publications {
@@ -196,8 +200,8 @@ subprojects {
 }
 
 nexusStaging {
-    def u = (System.getenv("PUB_USER") ?: getPropertyOrNull(project, "PUB_USER")) ?: System.properties.getProperty("mu")
-    def p =(System.getenv("PUB_PWD") ?: getPropertyOrNull(project, "PUB_PWD")) ?: System.properties.getProperty("mp")
+    def u = getPropertyOrCmdArgs(project, "PUB_USER", "u")
+    def p =getPropertyOrCmdArgs(project, "PUB_PWD", "p")
 
     username = u
     password = p
