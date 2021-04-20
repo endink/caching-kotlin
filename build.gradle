@@ -5,14 +5,14 @@ buildscript {
         kotlin_version = '1.4.10'
         junit_verions = '5.7.0'
         slf4j_version='1.7.30'
-        jackson_version = '2.11.3'
-        lettuce_version = '5.3.4.RELEASE'
+        jackson_version = '2.11.4'
+        lettuce_version = '6.1.1.RELEASE'
         netty_version = '4.1.52.Final'
-        kryo_version = '5.0.0'
+        kryo_version = '5.1.0'
 
-        spring_boot_version = '2.3.4.RELEASE'
-        spring_cloud_version='Hoxton.SR8'
-        spring_version = '5.2.9.RELEASE'
+        spring_boot_version = '2.4.5'
+        spring_cloud_version='2020.0.2'
+        spring_version = '5.3.6'
         spring_dep_mgn_version='1.0.10.RELEASE'
 
         nexus_staging_version = '0.22.0'
@@ -39,7 +39,7 @@ apply plugin: 'io.codearte.nexus-staging'
 allprojects {
 
     group 'com.labijie'
-    version '1.2.1'
+    version '1.2.2'
 
     configurations.all {
         resolutionStrategy {
