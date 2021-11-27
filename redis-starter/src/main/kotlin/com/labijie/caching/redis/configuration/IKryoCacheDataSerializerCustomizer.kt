@@ -13,5 +13,6 @@ import kotlin.reflect.KClass
  * @date 2019-09-09
  */
 interface IKryoCacheDataSerializerCustomizer : Ordered {
+    override fun getOrder(): Int = 0
     fun customize(options: KryoOptions)
 }

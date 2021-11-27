@@ -203,9 +203,11 @@ subprojects {
         }
 
         repositories {
-            if (isNotNullOrBlank(u) && isNotNullOrBlank(p)) {
+            // publish to private nexus
+            // gradle -Du="username" -Dp='password' -Ds='http://your-nexus-address/repository/maven-releases/' publishMavenJavaPublicationToNexusRepository
+            if (isNotNullOrBlank(u) && isNotNullOrBlank(p) && isNotNullOrBlank(s)) {
                 maven {
-                    name = "OSSRH"
+                    name = "nexus"
                     url = s
                     credentials {
                         username = u
