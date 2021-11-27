@@ -131,7 +131,7 @@ abstract class RedisCacheManagerTester {
     fun testGeneric(){
         val lst = listOf(TestData())
         redisCache.set("b", lst, 5000L, TimePolicy.Absolute, "region2")
-        val lll = redisCache.get("b", getGenericType(List::class.java,TestData::class.java))
+        redisCache.get("b", getGenericType(List::class.java,TestData::class.java))
         println(lst)
         Assertions.assertTrue(lst.isNotEmpty())
     }
@@ -234,8 +234,7 @@ abstract class RedisCacheManagerTester {
             "234" to TestData(),
             "345" to TestData())
 
-        val data = redisCache.getOrSet("list-test",
-            Function<String, Map<String, TestData>?> { map }, 60000L)
+        val data = redisCache.getOrSet("list-test", Duration.ofSeconds(60)){ map }
 
         val data2 = redisCache.getOrSet("list-test", Duration.ofSeconds(60)){
             map2
