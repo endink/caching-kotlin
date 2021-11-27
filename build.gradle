@@ -8,7 +8,7 @@ buildscript {
         jackson_version = '2.11.4'
         lettuce_version = '6.1.1.RELEASE'
         netty_version = '4.1.52.Final'
-        kryo_version = '5.1.0'
+        kryo_version = '5.2.0'
 
         spring_boot_version = '2.4.5'
         spring_cloud_version='2020.0.2'
@@ -17,29 +17,40 @@ buildscript {
 
         nexus_staging_version = '0.22.0'
         h2_version = '1.4.199'
+
+        publishing_plugin_version = '1.1.0'
+
+        maven_repo= System.getenv("MAVEN_PROXY") ?: 'https://maven.aliyun.com/nexus/content/groups/public/'
     }
-
-
 
     repositories {
         mavenLocal()
-        maven{ url 'https://maven.aliyun.com/nexus/content/groups/public/'}
+        if(maven_repo != null) {
+            maven {
+                url maven_repo
+                allowInsecureProtocol true
+            }
+        }
+        jcenter()
         mavenCentral()
-    }
-    dependencies {
-//        classpath("org.springframework.boot:spring-boot-gradle-plugin:${spring_boot_version}")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
-        classpath("org.jetbrains.kotlin:kotlin-allopen:$kotlin_version")
-        classpath("io.codearte.gradle.nexus:gradle-nexus-staging-plugin:$nexus_staging_version")
+        maven { url 'https://repo.spring.io/plugins-snapshot' }
     }
 }
 
-apply plugin: 'io.codearte.nexus-staging'
+plugins {
+    id "org.jetbrains.kotlin.plugin.spring" version "$kotlin_version" apply false
+    id "org.springframework.boot" version "$spring_boot_version" apply false
+    id "org.jetbrains.kotlin.jvm" version "$kotlin_version" apply false
+    id "io.github.gradle-nexus.publish-plugin" version "$publishing_plugin_version" apply false
+}
+
+
+apply plugin: 'io.github.gradle-nexus.publish-plugin'
 
 allprojects {
 
     group 'com.labijie'
-    version '1.2.2'
+    version '1.2.3'
 
     configurations.all {
         resolutionStrategy {
@@ -100,8 +111,15 @@ allprojects {
 
     repositories {
         mavenLocal()
-        maven{ url 'https://maven.aliyun.com/nexus/content/groups/public/'}
+        if(maven_repo != null) {
+            maven {
+                url maven_repo
+                allowInsecureProtocol true
+            }
+        }
+        jcenter()
         mavenCentral()
+        maven { url 'https://repo.spring.io/plugins-snapshot' }
     }
 
     test {
@@ -136,9 +154,9 @@ static getPropertyOrCmdArgs(Project project, String propertyName, String cmdArgN
 
 
 subprojects {
-
     def u = getPropertyOrCmdArgs(project, "PUB_USER", "u")
     def p =getPropertyOrCmdArgs(project, "PUB_PWD", "p")
+    def s = getPropertyOrCmdArgs(project, "PUB_URL", "s")
 
     publishing {
         publications {
@@ -188,7 +206,7 @@ subprojects {
             if (isNotNullOrBlank(u) && isNotNullOrBlank(p)) {
                 maven {
                     name = "OSSRH"
-                    url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                    url = s
                     credentials {
                         username = u
                         password = p
@@ -199,11 +217,13 @@ subprojects {
     }
 }
 
-nexusStaging {
-    def u = getPropertyOrCmdArgs(project, "PUB_USER", "u")
-    def p =getPropertyOrCmdArgs(project, "PUB_PWD", "p")
-
-    username = u
-    password = p
-    packageGroup = "com.labijie"
+nexusPublishing {
+    repositories {
+        sonatype {
+            def u = getPropertyOrCmdArgs(project, "PUB_USER", "u")
+            def p =getPropertyOrCmdArgs(project, "PUB_PWD", "p")
+            username = u
+            password = p
+        }
+    }
 }

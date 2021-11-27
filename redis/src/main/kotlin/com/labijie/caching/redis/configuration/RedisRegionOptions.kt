@@ -13,6 +13,4 @@ data class RedisRegionOptions(
     var timeout: Duration = Duration.ofSeconds(10),
     var serializer: String = "",
     var password: String = ""
-) {
-
-}
+)

@@ -83,11 +83,11 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
                     this.register(LinkedHashMap::class.java, 40)
                     this.register(LinkedHashSet::class.java, 41)
 
-                    kryoOptions.registeredClasses.forEach {
-                        if (it.key <= 100) {
+                    kryoOptions.getRegistry().forEach {
+                        if (it.id <= 100) {
                             throw CacheException("Kryo register class id must be greater than 100 ( start with 101 )")
                         }
-                        this.register(it.value.java, it.key)
+                        this.register(it)
                     }
                 }
             }
