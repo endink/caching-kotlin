@@ -5,7 +5,7 @@ package com.labijie.caching
  * @author Anders Xiao
  * @date 2019-03-23
  */
-fun <T> suppressCache(vararg options: CacheOperation, action: () -> T): T {
+fun <T> suppressCache(vararg options: CacheOperation = arrayOf(CacheOperation.Get, CacheOperation.Set, CacheOperation.Remove), action: () -> T): T {
     val current = ICacheScopeHolder.Current
     if (current != null) {
         return CacheScopeObject(current, suppressed = options).use {
