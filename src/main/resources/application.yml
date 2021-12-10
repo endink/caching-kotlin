@@ -1,7 +1,4 @@
 
 infra:
   caching:
-    redis:
-      regions:
-        region1:
-          url: redis://host1:6379, redis://host2:6379, redis://host3:6379
+    disabled: true

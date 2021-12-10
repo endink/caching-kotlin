@@ -160,7 +160,7 @@ public interface ISessionService {
 > Caching-kotlin will not provide the way annotations are used on the interface method any more, because the annotations on the interface break the rule that the interface should not care about details of implementing, and we think caching is also a detail of the implementation.
 >So, all @CacheXXX have to annotation on implement class method
 
-
+#### Partial off cache
 In a nested method, you might want to disable the cache annotation effect. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
 
 ```kotlin
@@ -181,6 +181,15 @@ fun noCacheMethod(){
     val user = userService.getUserById(123456)  
 }
 
+```
+
+#### Global Off cache
+
+use configuration to off cache:
+```yaml
+infra:
+  caching:
+    disabled: true
 ```
 
 ### Work with redis
