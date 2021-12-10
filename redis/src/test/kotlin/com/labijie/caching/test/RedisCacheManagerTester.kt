@@ -9,10 +9,9 @@ import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.*
-import java.util.function.Function
+import kotlin.test.Test
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -78,7 +77,8 @@ abstract class RedisCacheManagerTester {
 
         val `val` = TestData()
         redisCache.set("a", `val`, null, TimePolicy.Absolute, "b")
-        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, redisCache.get("a", TestData::class.java,"b"))
+        val vv = redisCache.get("a", TestData::class.java,"b")
+        Assert.assertEquals("get 方法取到的值和 set 放入的值不一致。", `val`, vv)
     }
 
     /**

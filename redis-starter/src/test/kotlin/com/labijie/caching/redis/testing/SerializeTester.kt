@@ -33,8 +33,8 @@ class SerializeTester {
         val kryoData = kryo.serializeData(data)
         val jsonData = json.serializeData(data)
 
-        assertTrue { smileData.length < jsonData.length }
-        assertTrue { kryoData.length < jsonData.length }
+        assertTrue { smileData.size < jsonData.size }
+        assertTrue { kryoData.size < jsonData.size }
     }
 
 }

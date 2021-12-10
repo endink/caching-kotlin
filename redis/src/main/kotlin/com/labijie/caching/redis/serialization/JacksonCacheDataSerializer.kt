@@ -2,14 +2,12 @@ package com.labijie.caching.redis.serialization
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.lang.reflect.Type
 
@@ -23,7 +21,6 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
 
     companion object {
         const val NAME = "json"
-        private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
 
         fun createObjectMapper(): ObjectMapper {
             return ObjectMapper().apply {
@@ -45,7 +42,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
     private val jacksonMapper: ObjectMapper = mapper ?: createObjectMapper()
 
 
-    override fun deserializeData(type: Type, data: String): Any? {
+    override fun deserializeData(type: Type, data: ByteArray): Any? {
         if (data.isEmpty()) {
             return null
         }
@@ -58,9 +55,9 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         }
     }
 
-    override fun serializeData(data: Any): String {
+    override fun serializeData(data: Any): ByteArray {
         try {
-            return jacksonMapper.writeValueAsString(data)
+            return jacksonMapper.writeValueAsBytes(data)
         } catch (ex: IOException) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
             throw CacheDataSerializationException(error, ex)

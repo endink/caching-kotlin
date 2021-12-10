@@ -8,21 +8,15 @@ import com.labijie.caching.CacheException
 import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.serialization.kryo.DateSerializer
+import com.labijie.caching.redis.serialization.kryo.PooledKryo
 import com.labijie.caching.redis.serialization.kryo.URISerializer
 import com.labijie.caching.redis.serialization.kryo.UUIDSerializer
-import com.labijie.caching.redis.serialization.kryo.PooledKryo
-import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.net.URI
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.LinkedHashSet
 
 /**
  * Created with IntelliJ IDEA.
@@ -94,7 +88,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     }
 
 
-    override fun deserializeData(type: Type, data: String): Any {
+    override fun deserializeData(type: Type, data: ByteArray): Any {
         val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
         val javaType = when (clazz) {
             List::class.java -> ArrayList::class.java
@@ -107,13 +101,11 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
         if (javaType.isInterface) {
             throw CacheDataDeserializationException("Interface type was unsupported when use kryo serializer.")
         }
-        val byteArray = Base64.getDecoder().decode(data)
-        return kryo.deserialize(byteArray, javaType)
+        return kryo.deserialize(data, javaType)
     }
 
-    override fun serializeData(data: Any): String {
-        val bytes = kryo.serialize(data)
-        return Base64.getEncoder().encodeToString(bytes)
+    override fun serializeData(data: Any): ByteArray {
+        return kryo.serialize(data)
     }
 
     override val name: String = NAME

@@ -9,6 +9,6 @@ import java.lang.reflect.Type
  */
 interface ICacheDataSerializer {
     val name:String
-    fun deserializeData(type: Type, data: String): Any?
-    fun serializeData(data: Any): String
+    fun deserializeData(type: Type, data: ByteArray): Any?
+    fun serializeData(data: Any): ByteArray
 }

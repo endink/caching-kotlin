@@ -6,6 +6,6 @@ package com.labijie.caching.redis
  * @date 2019-03-20
  */
 internal class CacheHashData(
-    var data: String?,
+    var data: ByteArray?,
     var serializer: String
 )

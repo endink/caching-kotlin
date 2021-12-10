@@ -1,17 +1,13 @@
 package com.labijie.caching.redis.serialization
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import org.slf4j.LoggerFactory
-import java.io.IOException
 import java.lang.reflect.Type
-import java.util.*
 
 /**
  *
@@ -22,7 +18,6 @@ import java.util.*
 class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = null) : ICacheDataSerializer {
     companion object {
         const val NAME = "json-smile"
-        private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
 
         fun createObjectMapper(): SmileMapper {
             return SmileMapper().apply {
@@ -42,24 +37,22 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
     private val smileMapper: SmileMapper = mapper ?: createObjectMapper()
 
 
-    override fun deserializeData(type: Type, data: String): Any? {
+    override fun deserializeData(type: Type, data: ByteArray): Any? {
         if (data.isEmpty()) {
             return null
         }
         try {
             val javaType = this.smileMapper.typeFactory.constructType(type)
-            val byteArray = Base64.getDecoder().decode(data)
-            return this.smileMapper.readValue(byteArray, javaType)
+            return this.smileMapper.readValue(data, javaType)
         } catch (ex: Throwable) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: $type )."
             throw CacheDataDeserializationException(error, ex)
         }
     }
 
-    override fun serializeData(data: Any): String {
+    override fun serializeData(data: Any): ByteArray {
         try {
-            val bytes= smileMapper.writeValueAsBytes(data)
-            return Base64.getEncoder().encodeToString(bytes)
+            return smileMapper.writeValueAsBytes(data)
         } catch (ex: Throwable) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
             throw CacheDataSerializationException(error, ex)

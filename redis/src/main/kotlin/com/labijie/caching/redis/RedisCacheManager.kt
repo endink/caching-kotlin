@@ -3,11 +3,12 @@ package com.labijie.caching.redis
 import com.labijie.caching.CacheException
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
+import com.labijie.caching.redis.codec.KeyValueCodec
+import com.labijie.caching.redis.codec.RedisValue
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
-import io.lettuce.core.codec.StringCodec
 import io.lettuce.core.masterreplica.MasterReplica
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
@@ -43,10 +44,6 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         private const val DATA_KEY = "data"
         private const val SERIALIZER_KEY = "ser"
 
-        private val ABSOLUTE_EXPIRATION_ARRAY_KEY = ABSOLUTE_EXPIRATION_KEY.toByteArray(Charsets.UTF_8)
-        private val SLIDING_EXPIRATION_ARRAY_KEY = SLIDING_EXPIRATION_KEY.toByteArray(Charsets.UTF_8)
-        private val DATA_ARRAY_KEY = DATA_KEY.toByteArray((Charsets.UTF_8))
-        private val SERIALIZER_ARRAY_KEY = SERIALIZER_KEY.toByteArray(Charsets.UTF_8)
 
         private const val NOT_PRESENT: Long = -1
 
@@ -76,6 +73,14 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                     or (this[5].toLong() and 0xff shl 16)
                     or (this[6].toLong() and 0xff shl 8)
                     or (this[7].toLong() and 0xff shl 0))
+        }
+
+        private fun String.toRedisValue(): RedisValue {
+            return RedisValue(this)
+        }
+
+        private fun ByteArray.toRedisValue(): RedisValue {
+            return RedisValue(this)
         }
     }
 
@@ -115,14 +120,15 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         return c
     }
 
-    private fun createClientAndConnection(url: String): Pair<RedisClient, StatefulRedisConnection<String, String>> {
+    private fun createClientAndConnection(url: String): Pair<RedisClient, StatefulRedisConnection<String, RedisValue>> {
         if (url.isBlank()) {
             throw RedisException("Redis url cant not be null or empty string.")
         }
+        val codec = KeyValueCodec()
         val urls = url.split(",")
         if (urls.size <= 1) {
             val c = RedisClient.create(url)
-            val connection = c.connect(StringCodec())
+            val connection = c.connect(codec)
             return Pair(c, connection)
         } else {
             val redisUrls = urls.map {
@@ -130,7 +136,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             }
             val client = RedisClient.create()
             val connection = MasterReplica.connect(
-                client, StringCodec(),
+                client, codec,
                 redisUrls
             )
             connection.readFrom = ReadFrom.REPLICA_PREFERRED
@@ -139,18 +145,18 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     }
 
     private fun List<KeyValue<String, String>>.toMap(): Map<String, String> {
-        return this.filter { it.hasValue() }.map {
+        return this.filter { it.hasValue() }.associate {
             it.key to it.value
-        }.toMap()
+        }
     }
 
-    private fun deserializeData(serializerName: String, type: Type, data: String): Any? {
+    private fun deserializeData(serializerName: String, type: Type, data: ByteArray): Any? {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.deserializeData(type, data)
     }
 
 
-    private fun serializeData(serializerName: String, data: Any): String {
+    private fun serializeData(serializerName: String, data: Any): ByteArray {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.serializeData(data)
     }
@@ -162,7 +168,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     }
 
     private fun getAndRefresh(
-        connection: StatefulRedisConnection<String, String>,
+        connection: StatefulRedisConnection<String, RedisValue>,
         key: String,
         getData: Boolean
     ): CacheHashData? {
@@ -189,29 +195,29 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
 
 
-        val valueMap = values.map { it.key to it.value }.toMap()
+        val valueMap = values.associate { it.key to it.value }
 
 
         // TODO: Error handling
         if (valueMap.size >= 2) {
             this.refreshExpire(
                 connection, key,
-                valueMap.getOrDefault(ABSOLUTE_EXPIRATION_KEY, null)?.toLong(),
-                valueMap.getOrDefault(SLIDING_EXPIRATION_KEY, null)?.toLong()
+                valueMap.getOrDefault(ABSOLUTE_EXPIRATION_KEY, null)?.readString()?.toLongOrNull(),
+                valueMap.getOrDefault(SLIDING_EXPIRATION_KEY, null)?.readString()?.toLongOrNull()
             )
         }
 
         if (valueMap.size >= 4) {
-            val data = valueMap.getOrDefault(DATA_KEY, null)
-            val serializer = valueMap.getOrDefault(SERIALIZER_KEY, null).orEmpty()
+            val data = valueMap.getOrDefault(DATA_KEY, null)?.readBytes()
+            val serializer = valueMap.getOrDefault(SERIALIZER_KEY, null)?.readString()
 
-            return CacheHashData(data, serializer)
+            return CacheHashData(data, serializer.orEmpty())
         }
         return null
     }
 
     private fun refreshExpire(
-        connection: StatefulRedisConnection<String, String>,
+        connection: StatefulRedisConnection<String, RedisValue>,
         key: String,
         absExpr: Long?,
         sldExpr: Long?
@@ -229,7 +235,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    protected fun removeCore(connection: StatefulRedisConnection<String, String>, key: String, region: String?) {
+    protected fun removeCore(connection: StatefulRedisConnection<String, RedisValue>, key: String, region: String?) {
         try {
             connection.sync().del(key)
         } catch (ex: RedisException) {
@@ -253,11 +259,11 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         val creationTime = System.currentTimeMillis()
 
         val values = arrayOf(
-            (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString(),
-            (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString(),
-            (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString(),
-            this.serializeData(client.serializer, data),
-            client.serializer
+            (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
+            (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
+            (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
+            this.serializeData(client.serializer, data).toRedisValue(),
+            client.serializer.toRedisValue()
         )
 
         val command = client.connection.sync()
