@@ -1,8 +1,0 @@
-dependencies {
-    api project(":core")
-    api group: 'io.lettuce', name: 'lettuce-core', version: lettuce_version
-    api "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
-    api "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jackson_version
-    api group: 'com.esotericsoftware', name: 'kryo', version: kryo_version
-}

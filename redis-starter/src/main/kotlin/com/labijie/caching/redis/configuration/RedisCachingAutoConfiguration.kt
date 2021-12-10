@@ -6,6 +6,7 @@ import com.labijie.caching.redis.CacheDataSerializerRegistry
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
+import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
 import org.springframework.beans.factory.ObjectProvider
@@ -49,6 +50,16 @@ class RedisCachingAutoConfiguration {
             it.customize(kryoOptions)
         }
         return KryoCacheDataSerializer(kryoOptions)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(JsonSmileDataSerializer::class)
+    fun kryoCacheDataSerializer(customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>): JsonSmileDataSerializer {
+        val smileMapper = JsonSmileDataSerializer.createObjectMapper()
+        customizers.orderedStream().forEach {
+            it.customize(smileMapper)
+        }
+        return JsonSmileDataSerializer(smileMapper)
     }
 
     @Bean

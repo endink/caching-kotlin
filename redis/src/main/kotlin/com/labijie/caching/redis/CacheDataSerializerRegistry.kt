@@ -2,6 +2,7 @@ package com.labijie.caching.redis
 
 import com.labijie.caching.CacheException
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
+import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
 import org.slf4j.LoggerFactory
@@ -16,26 +17,31 @@ object CacheDataSerializerRegistry {
     private val logger = LoggerFactory.getLogger(CacheDataSerializerRegistry::class.java)
 
     fun getSerializer(name: String): ICacheDataSerializer {
-        val serializerName = name.toLowerCase()
-        val serializer = serializers.getOrDefault(serializerName, null)
-        if (serializer == null) {
-            return when (serializerName) {
-                JacksonCacheDataSerializer.NAME -> {
-                    val ser = JacksonCacheDataSerializer()
-                    serializers[serializerName] = ser
-                    ser
-                }
-                KryoCacheDataSerializer.NAME -> {
-                    val ser = KryoCacheDataSerializer(KryoOptions())
-                    serializers[serializerName] = ser
-                    ser
-                }
-                else -> throw CacheException("Cant find cache data serializer with name '$serializerName'")
-            }
-        } else {
-            return serializer
+        val serializerName = name.lowercase()
+        return serializers.getOrPut(serializerName) {
+            createSerializer(serializerName)
         }
+    }
 
+    private fun createSerializer(serializerName: String): ICacheDataSerializer {
+        return when (serializerName) {
+            JacksonCacheDataSerializer.NAME -> {
+                val ser = JacksonCacheDataSerializer()
+                serializers[serializerName] = ser
+                ser
+            }
+            KryoCacheDataSerializer.NAME -> {
+                val ser = KryoCacheDataSerializer(KryoOptions())
+                serializers[serializerName] = ser
+                ser
+            }
+            JsonSmileDataSerializer.NAME -> {
+                val ser = JsonSmileDataSerializer()
+                serializers[serializerName] = ser
+                ser
+            }
+            else -> throw CacheException("Cant find cache data serializer with name '$serializerName'")
+        }
     }
 
     fun registerSerializer(serializer: ICacheDataSerializer) {

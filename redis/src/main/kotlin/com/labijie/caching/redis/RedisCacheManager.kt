@@ -95,20 +95,22 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             redisConfig.regions.getOrDefault(name, null)
                 ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
-        val r = if (name.isBlank()) NULL_REGION_NAME else name
-        val client: RedisClientInternal? = null
+        val r = name.ifBlank { NULL_REGION_NAME }
+        var client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
             val (cli, conn) = createClientAndConnection(config.url)
 
             val n = if (region.isNullOrBlank()) "" else region
-            RedisClientInternal(
+            val newClient = RedisClientInternal(
                 n,
                 conn,
                 cli,
                 config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME })
+            client = newClient
+            newClient
         }
-        if (client != null && c !== client) {
-            client.close()
+        if (c !== client) {
+            client?.close()
         }
         return c
     }
@@ -310,7 +312,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                 } catch (ex: Throwable) {
                     logger.warn("The specified type '$type' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
 
-                    if (ex is OutOfMemoryError || ex is StackOverflowError) {
+                    if (ex is VirtualMachineError) {
                         throw ex
                     }
                     this.removeCore(client.connection, key, region)

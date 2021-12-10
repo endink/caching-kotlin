@@ -1,9 +1,9 @@
 package com.labijie.caching.redis.serialization
 
 import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.JsonMappingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.CacheDataSerializationException
@@ -13,19 +13,18 @@ import java.io.IOException
 import java.lang.reflect.Type
 
 /**
- * Created with IntelliJ IDEA.
- * @author Anders Xiao
- * @date 2019-03-20
+ *
+ * @Author: Anders Xiao
+ * @Date: 2021/12/10
+ * @Description:
  */
-class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper? = null) :
-    ICacheDataSerializer {
-
+class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = null) : ICacheDataSerializer {
     companion object {
-        const val NAME = "json"
+        const val NAME = "json-smile"
         private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
 
-        fun createObjectMapper(): ObjectMapper {
-            return ObjectMapper().apply {
+        fun createObjectMapper(): SmileMapper {
+            return SmileMapper().apply {
                 configure(
                     DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false
                 )
@@ -39,7 +38,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
 
     override val name: String = NAME
 
-    private val jacksonMapper: ObjectMapper = mapper ?: createObjectMapper()
+    private val smileMapper: SmileMapper = mapper ?: createObjectMapper()
 
 
     override fun deserializeData(type: Type, data: String): Any? {
@@ -47,8 +46,8 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
             return null
         }
         try {
-            val javaType = this.jacksonMapper.typeFactory.constructType(type)
-            return this.jacksonMapper.readValue(data, javaType)
+            val javaType = this.smileMapper.typeFactory.constructType(type)
+            return this.smileMapper.readValue(data, javaType)
         } catch (ex: IOException) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: $type )."
             throw CacheDataDeserializationException(error, ex)
@@ -57,13 +56,11 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
 
     override fun serializeData(data: Any): String {
         try {
-            return jacksonMapper.writeValueAsString(data)
+            return smileMapper.writeValueAsString(data)
         } catch (ex: IOException) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
             throw CacheDataSerializationException(error, ex)
         }
 
     }
-
-
 }

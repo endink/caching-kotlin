@@ -9,7 +9,7 @@
   ],
   "properties": [
     {
-      "name": "infra.caching.redis.defaultRegion",
+      "name": "infra.caching.redis.default-region",
       "type": "java.lang.String",
       "description": "default region for redis caching"
     },
@@ -21,7 +21,7 @@
     {
       "name": "infra.caching.redis.default-serializer",
       "type": "java.lang.String",
-      "defaultValue": "json",
+      "defaultValue": "json-smile",
       "description": "cache data serializer"
     }
   ],
@@ -34,6 +34,9 @@
         },
         {
           "value": "kryo"
+        },
+        {
+          "value": "json-smile"
         }
       ],
       "providers": [

@@ -10,6 +10,15 @@ A cache structure that supports expiration on each key.
 
 All of the jar packages has been uploaded to the maven central.
 
+### 1.3.x Break Changes
+
+>Since version 1.3, we use json-smile as the redis default serialization provider.
+So, if you want to change back to the default jackson serialization in your spring project, 
+you need to **explicitly** add the configuration: 
+> 
+>**infra.caching.redis.default-serializer=json**
+
+
 :smile: **Now, kryo serializer was fully supported for redis ( since 1.0.7 ) !!**
 
 ## Kryo serialization saves 80% memory than spring redis template (jdk serialization) !! 
