@@ -194,6 +194,7 @@ The following example shows the Redis configuration with two regions ( region1, 
 infra:
   caching:
     redis:
+      default-serializer: json-smile
       regions:
         region1:
           url: redis://localhost:6379/1
@@ -220,11 +221,17 @@ Since we use lettuce as a redis client, the URLs in all of the above examples ar
 
 Jackson is used as a serializer by default in the redis implementation, so the objects you want to cache must can be serialized and deserialized by Jackson (for example, it must contains a none args constructor).
 
-There are two built-in serializers, here is the their configuration names you can use:
+---
+There are 3 built-in serializers, here is their configuration names you can use:
 
-**json-smile** (for json smile binary serializer)   
-**json** (for json text serializer)   
-**kryo** (for kryo binary serializer)   
+- **json-smile** (for json smile binary serializer)   
+- **json** (for json text serializer)   
+- **kryo** (for kryo binary serializer)   
+
+For spring project, every serializer include an customize interface for configure. Looks like **IXXXXCacheDataSerializerCustomizer**:
+- **IJacksonCacheDataSerializerCustomizer**
+- **IJsonSmileCacheDataSerializerCustomizer**
+- **IKryoCacheDataSerializerCustomizer**
 
 Caching-kotlin also provide the ability to customize serializer:
 
