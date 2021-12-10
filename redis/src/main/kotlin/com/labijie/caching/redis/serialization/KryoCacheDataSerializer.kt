@@ -33,7 +33,6 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
 
     companion object {
         const val NAME = "kryo"
-        private val LOGGER = LoggerFactory.getLogger(JacksonCacheDataSerializer::class.java)
     }
 
     private val kryo: PooledKryo
@@ -95,7 +94,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     }
 
 
-    override fun deserializeData(type: Type, data: String): Any? {
+    override fun deserializeData(type: Type, data: String): Any {
         val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
         val javaType = when (clazz) {
             List::class.java -> ArrayList::class.java
