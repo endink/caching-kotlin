@@ -243,18 +243,18 @@ For spring project, every serializer include an customize interface for configur
 - IJsonSmileCacheDataSerializerCustomizer
 - IKryoCacheDataSerializerCustomizer
 
-Caching-kotlin also provide the ability to customize serializer:
+Caching-kotlin also provide the ability to create serializer by yourself:
 
 ```kotlin
 @Component
 class MySerializer : ICacheDataSerializer {
     override val name: String = "my-serializer"
     
-    override fun serializeData(data: Any): String {
+    override fun serializeData(data: Any): ByteArray {
         //...
     }
 
-    override fun <T : Any> deserializeData(type: KClass<T>, data: String): T? {
+    override fun <T : Any> deserializeData(type: KClass<T>, data: ByteArray): T? {
         //...
     }
 }
