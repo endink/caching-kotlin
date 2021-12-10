@@ -1,6 +1,8 @@
 package com.labijie.caching.redis.codec
 
 import io.lettuce.core.codec.RedisCodec
+import io.lettuce.core.codec.ToByteBufEncoder
+import io.netty.buffer.ByteBuf
 import java.nio.ByteBuffer
 
 /**
@@ -9,8 +11,8 @@ import java.nio.ByteBuffer
  * @Date: 2021/12/10
  * @Description:
  */
-internal class KeyValueCodec : RedisCodec<String, RedisValue> {
-    private val keyCodec: RedisCodec<String, *> = RedisValueCodec.stringCodec
+internal class KeyValueCodec : RedisCodec<String, RedisValue>, ToByteBufEncoder<String, RedisValue> {
+    private val keyCodec = RedisValueCodec.stringCodec
     private val valueCodec = RedisValueCodec()
 
 
@@ -28,5 +30,23 @@ internal class KeyValueCodec : RedisCodec<String, RedisValue> {
 
     override fun encodeValue(value: RedisValue): ByteBuffer {
         return valueCodec.encodeValue(value)
+    }
+
+    override fun encodeKey(key: String?, target: ByteBuf?) {
+        keyCodec.encodeKey(key, target)
+    }
+
+    override fun encodeValue(value: RedisValue?, target: ByteBuf?) {
+        valueCodec.encodeKey(value, target)
+    }
+
+    override fun estimateSize(keyOrValue: Any?): Int {
+        if(keyOrValue is String){
+            keyCodec.estimateSize(keyOrValue)
+        }
+        if(keyOrValue is RedisValue){
+            valueCodec.estimateSize(keyOrValue)
+        }
+        return 0
     }
 }
