@@ -13,7 +13,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy
  * @author Anders Xiao
  * @date 2019-03-25
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @EnableAspectJAutoProxy
 class TestConfiguration {
 

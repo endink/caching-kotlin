@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Configuration
  * @author Anders Xiao
  * @date 2019-03-26
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(CachingAutoConfiguration::class)
 @ConditionalOnMissingBean(ICacheManager::class)
 class RedisCachingAutoConfiguration {

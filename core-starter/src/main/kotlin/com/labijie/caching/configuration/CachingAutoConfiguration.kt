@@ -6,30 +6,28 @@ import com.labijie.caching.ThreadLocalCacheScopeHolder
 import com.labijie.caching.aspect.CacheGetAspect
 import com.labijie.caching.aspect.CacheRemoveAspect
 import com.labijie.caching.aspect.CacheScopeAspect
-import com.labijie.caching.component.*
+import com.labijie.caching.component.HashedWheelDelayTimer
+import com.labijie.caching.component.IDelayTimer
+import com.labijie.caching.component.ITransactionInjection
+import com.labijie.caching.component.NoopTransactionInjection
 import com.labijie.caching.memory.MemoryCacheManager
 import com.labijie.caching.memory.MemoryCacheOptions
-import org.springframework.boot.autoconfigure.AutoConfigureAfter
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
-import org.springframework.transaction.PlatformTransactionManager
 
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao
  * @date 2019-03-22
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import(JdbcCachingAutoConfiguration::class)
 class CachingAutoConfiguration {
 
-    @Configuration
+    @Configuration(proxyBeanMethods = false)
     @ConditionalOnMissingBean(ICacheManager::class)
     protected class MemoryCacheAutoConfiguration {
 

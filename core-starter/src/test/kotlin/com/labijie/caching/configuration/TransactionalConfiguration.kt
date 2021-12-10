@@ -14,7 +14,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder
  * @author Anders Xiao
  * @date 2019-03-25
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 class TransactionalConfiguration {
 
     @Bean
