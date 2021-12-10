@@ -49,13 +49,13 @@ You only need to use the ICacheManager interface, which can be easily integrated
 use 
 
 ```kotlin
-val memoryCache = MemoryCacheManager(MemoryCacheOptions());
+val memoryCache = MemoryCacheManager(MemoryCacheOptions())
 
 //sliding time expires
-memoryCache.set("2", Any(), 3000L, TimePolicy.Sliding);
+memoryCache.set("2", Any(), 3000L, TimePolicy.Sliding)
 
 //absolute time expires
-memoryCache.set("a", Any(), 1000L, TimePolicy.Absolute);
+memoryCache.set("a", Any(), 1000L, TimePolicy.Absolute)
 
 //get
 memoryCache.get("a")
@@ -209,7 +209,6 @@ infra:
       regions:
         default: 
           url: redis://host1:6379, redis://host2:6379, redis://host3:6379
-
 ```
 
 Since we use lettuce as a redis client, the URLs in all of the above examples are "lettuce schema", and to learn more about redis url, see here: https://github.com/lettuce-io/lettuce-core/wiki/Redis-URI-and-connection-details
@@ -223,9 +222,9 @@ Jackson is used as a serializer by default in the redis implementation, so the o
 
 There are two built-in serializers, here is the their configuration names you can use:
 
-**json** (for jackson serializer)
-
-**kryo** (for kryo serializer)
+**json-smile** (for json smile binary serializer)   
+**json** (for json text serializer)   
+**kryo** (for kryo binary serializer)   
 
 Caching-kotlin also provide the ability to customize serializer:
 
