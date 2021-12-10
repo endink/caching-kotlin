@@ -11,6 +11,6 @@ import java.lang.annotation.Inherited
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FUNCTION)
 annotation class SuppressCache(
-    val operations: Array<CacheOperation>
+    val operations: Array<CacheOperation> = [CacheOperation.Get, CacheOperation.Set, CacheOperation.Remove]
 ) {
 }

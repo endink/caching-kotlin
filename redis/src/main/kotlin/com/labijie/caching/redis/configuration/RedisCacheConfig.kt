@@ -10,6 +10,6 @@ import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
  */
 open class RedisCacheConfig {
     var defaultRegion: String = ""
-    var defaultSerializer: String = JsonSmileDataSerializer.NAME
+    var defaultSerializer: String = JacksonCacheDataSerializer.NAME
     var regions: MutableMap<String, RedisRegionOptions> = mutableMapOf()
 }

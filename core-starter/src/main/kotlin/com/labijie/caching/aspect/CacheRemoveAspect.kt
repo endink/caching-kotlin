@@ -80,7 +80,7 @@ class CacheRemoveAspect(
         if (cacheRemove.delayMills <= 0) {
             this.cacheManager.remove(key, region)
         } else {
-            val delay = Math.max(1000L, cacheRemove.delayMills)
+            val delay = cacheRemove.delayMills.coerceAtLeast(1000L)
             this.timer.delay(delay) {
                 try {
                     this.cacheManager.remove(key, region)

@@ -12,4 +12,8 @@ data class ArgumentObject(
     var stringValue: String = UUID.randomUUID().toString(),
     var longValue: Long = Random.nextLong()
 ) {
+    var mapValues = mutableMapOf<String, Long>(
+        "1231231" to 23123123,
+        "333333" to 1111
+    )
 }

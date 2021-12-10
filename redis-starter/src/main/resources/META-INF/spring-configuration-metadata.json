@@ -21,7 +21,7 @@
     {
       "name": "infra.caching.redis.default-serializer",
       "type": "java.lang.String",
-      "defaultValue": "json-smile",
+      "defaultValue": "json",
       "description": "cache data serializer"
     }
   ],

@@ -1,11 +1,23 @@
 {
   "group": [
     {
+      "name": "infra.caching",
+      "type": "com.labijie.caching.configuration.CachingProperties"
+    },
+    {
       "name": "infra.caching.memory",
       "type": "com.labijie.caching.memory.MemoryCacheOptions"
     }
   ],
   "properties": [
+    {
+      "name": "infra.caching.disabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.labijie.caching.configuration.CachingProperties",
+      "defaultValue": false,
+      "description": "disable cache"
+    },
+
     {
       "name": "infra.caching.memory.scanFrequency",
       "type": "java.time.Duration",

@@ -8,4 +8,5 @@ package com.labijie.caching
 enum class CacheOperation {
     Get,
     Remove,
+    Set,
 }

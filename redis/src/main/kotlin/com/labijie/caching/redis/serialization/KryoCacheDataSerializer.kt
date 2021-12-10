@@ -98,11 +98,11 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     override fun deserializeData(type: Type, data: String): Any? {
         val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
         val javaType = when (clazz) {
-            List::class.java, MutableList::class.java -> ArrayList::class.java
-            Map::class.java, MutableMap::class.java -> HashMap::class.java
-            Set::class.java, MutableSet::class.java -> HashSet::class.java
-            Collection::class.java, MutableCollection::class.java -> ArrayList::class.java
-            Iterable::class.java, MutableIterable::class.java->ArrayList::class.java
+            List::class.java -> ArrayList::class.java
+            Map::class.java -> HashMap::class.java
+            Set::class.java -> HashSet::class.java
+            Collection::class.java -> ArrayList::class.java
+            Iterable::class.java -> ArrayList::class.java
             else -> clazz
         }
         if (javaType.isInterface) {

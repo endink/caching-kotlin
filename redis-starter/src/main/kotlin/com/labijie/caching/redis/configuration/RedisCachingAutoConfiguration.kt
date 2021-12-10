@@ -1,6 +1,7 @@
 package com.labijie.caching.redis.configuration
 
 import com.labijie.caching.ICacheManager
+import com.labijie.caching.ScopedCacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.redis.CacheDataSerializerRegistry
 import com.labijie.caching.redis.ICacheDataSerializer
@@ -12,6 +13,7 @@ import com.labijie.caching.redis.serialization.KryoOptions
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -24,6 +26,7 @@ import org.springframework.context.annotation.Configuration
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(CachingAutoConfiguration::class)
 @ConditionalOnMissingBean(ICacheManager::class)
+@ConditionalOnProperty(name = ["infra.caching.disabled"], havingValue = "false", matchIfMissing = true)
 class RedisCachingAutoConfiguration {
 
     @Bean
@@ -65,11 +68,13 @@ class RedisCachingAutoConfiguration {
     @Bean
     fun redisCacheManager(
         serializers: ObjectProvider<ICacheDataSerializer>,
-        config: RedisCacheConfig
-    ): RedisCacheManager {
+        config: RedisCacheConfig,
+
+    ): ScopedCacheManager {
         serializers.orderedStream().forEach {
             CacheDataSerializerRegistry.registerSerializer(it)
         }
-        return RedisCacheManager(config)
+        val innerCache = RedisCacheManager(config)
+        return ScopedCacheManager(innerCache)
     }
 }

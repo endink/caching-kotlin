@@ -18,7 +18,5 @@ annotation class Cache(
     val expireMills:Long,
     val region:String = "",
     val timePolicy:TimePolicy = TimePolicy.Absolute,
-    val location: CacheLocation = CacheLocation.Remoting,
-    val localExpireMills:Long = 3000,
     val ignoreCacheError:Boolean = true) {
 }

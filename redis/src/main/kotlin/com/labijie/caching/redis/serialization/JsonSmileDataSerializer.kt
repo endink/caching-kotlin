@@ -11,6 +11,7 @@ import com.labijie.caching.redis.ICacheDataSerializer
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.lang.reflect.Type
+import java.util.*
 
 /**
  *
@@ -47,8 +48,9 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
         }
         try {
             val javaType = this.smileMapper.typeFactory.constructType(type)
-            return this.smileMapper.readValue(data, javaType)
-        } catch (ex: IOException) {
+            val byteArray = Base64.getDecoder().decode(data)
+            return this.smileMapper.readValue(byteArray, javaType)
+        } catch (ex: Throwable) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: $type )."
             throw CacheDataDeserializationException(error, ex)
         }
@@ -56,8 +58,9 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
 
     override fun serializeData(data: Any): String {
         try {
-            return smileMapper.writeValueAsString(data)
-        } catch (ex: IOException) {
+            val bytes= smileMapper.writeValueAsBytes(data)
+            return Base64.getEncoder().encodeToString(bytes)
+        } catch (ex: Throwable) {
             val error = "Redis cache manager serialize fault ( ser:$NAME class: ${data::class.java} )."
             throw CacheDataSerializationException(error, ex)
         }
