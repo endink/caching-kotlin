@@ -19,6 +19,7 @@ class SerializeTester {
         return ArgumentObject()
     }
 
+
     @Test
     fun serialize(){
         val data = createTestData()
@@ -35,4 +36,5 @@ class SerializeTester {
         assertTrue { smileData.length < jsonData.length }
         assertTrue { kryoData.length < jsonData.length }
     }
+
 }
