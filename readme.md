@@ -163,16 +163,12 @@ public interface ISessionService {
 
 In a nested method, you might want to disable the cache annotation effect. for example, if you are using JPA to get data for updates, so you might want to get data directly from the database, this action can also be done easily:
 
->:bell:**Important:**
->
-> Only the behavior of annotations is suppressed, and the behavior of using ICacheManager beans is not affected by the "disableCache"
-
 ```kotlin
 
-fun noCacheMethod(){
-    suppressCache(options = CacheOperation.Get){
-        val user = userService.getUserById(123456)  
-    }
+fun suppressCache(CacheOperation.Get, CacheOperation.Set){
+    val user = userService.getUserById(123456) //the operation cache will be prevented
+    
+    cacheManager.set("u2", user) //the operation cache will be prevented
 }
 
 ```
@@ -233,10 +229,10 @@ There are 3 built-in serializers, here is their configuration names you can use:
 - **json** (for json text serializer)   
 - **kryo** (for kryo binary serializer)   
 
-For spring project, every serializer include an customize interface for configure. Looks like **IXXXXCacheDataSerializerCustomizer**:
-- **IJacksonCacheDataSerializerCustomizer**
-- **IJsonSmileCacheDataSerializerCustomizer**
-- **IKryoCacheDataSerializerCustomizer**
+For spring project, every serializer include an customize interface for configure. Looks like *IXXXXCacheDataSerializerCustomizer*:
+- IJacksonCacheDataSerializerCustomizer
+- IJsonSmileCacheDataSerializerCustomizer
+- IKryoCacheDataSerializerCustomizer
 
 Caching-kotlin also provide the ability to customize serializer:
 
