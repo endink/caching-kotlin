@@ -29,6 +29,8 @@ jobs:
        echo "Create .gpg key"
        echo "$GPG_KEY" > ./release.asc
        gpg --quiet --output $GITHUB_WORKSPACE/release.gpg --dearmor ./release.asc
+       sed -i -e "s,PUB_USER=,PUB_USER=$PUB_USER,g" gradle.properties
+       sed -i -e "s,PUB_PWD=,PUB_PWD=$PUB_PWD,g" gradle.properties
        sed -i -e "s,signing.keyId=,signing.keyId=$GPG_KEY_ID,g" gradle.properties
        sed -i -e "s,signing.password=,signing.password=$GPG_PWD,g" gradle.properties
        sed -i -e "s,signing.secretKeyRingFile=,signing.secretKeyRingFile=$GITHUB_WORKSPACE/release.gpg,g" gradle.properties
