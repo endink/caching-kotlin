@@ -7,6 +7,6 @@
 object Versions {
     const val kotlin = "1.6.0"
     const val infraBom = "2.6.3"
-    const val infraOrm = "1.0.0"
-    const val infraPlugin = "1.0.6"
+    const val infraOrm = "1.0.1"
+    const val infraPlugin = "1.0.7"
 }
