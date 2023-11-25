@@ -4,3 +4,10 @@ include("redis")
 include("core-starter")
 include("redis-starter")
 
+pluginManagement {
+
+    repositories {
+        mavenLocal()
+        gradlePluginPortal()
+    }
+}

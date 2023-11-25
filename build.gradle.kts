@@ -5,29 +5,29 @@ plugins {
 
 allprojects {
     group = "com.labijie"
-    version = "1.3.3"
+    version = "1.4.0"
 
     infra {
         useDefault {
             includeSource = true
             infraBomVersion = Versions.infraBom
             kotlinVersion = Versions.kotlin
-            useMavenProxy = false
         }
-
-        useNexusPublish()
+        usePublishPlugin()
     }
 }
 subprojects {
     if(!project.name.startsWith("dummy")){
         infra {
-            usePublish {
-                description = "labijie caching library"
-                githubUrl("endink", "caching-kotlin")
-                artifactId {
-                    if(it.name == "core") "caching-kotlin" else "caching-kotlin-" + it.name
+            publishing {
+                pom {
+                    description = "labijie caching library"
+                    githubUrl("endink", "caching-kotlin")
+                    artifactId {
+                        if (it.name == "core") "caching-kotlin" else "caching-kotlin-" + it.name
+                    }
+                    developer("AndersXiao", "sharping@outlook.com")
                 }
-                developer("AndersXiao", "sharping@outlook.com")
             }
         }
     }

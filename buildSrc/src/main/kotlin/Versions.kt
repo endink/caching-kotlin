@@ -5,8 +5,7 @@
  * @Description:
  */
 object Versions {
-    const val kotlin = "1.6.0"
-    const val infraBom = "2.6.3"
-    const val infraOrm = "1.0.1"
-    const val infraPlugin = "1.0.7"
+    const val kotlin = "1.9.21"
+    const val infraBom = "3.1.5"
+    const val infraPlugin = "2.0.2"
 }
