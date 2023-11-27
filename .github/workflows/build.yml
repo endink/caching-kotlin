@@ -25,7 +25,6 @@ jobs:
       with:
         distribution: 'microsoft'
         java-version: '17'
-        cache: 'maven'
     - name: PGP Prepare
       run: |
        echo "Create .gpg key"
