@@ -5,7 +5,7 @@ plugins {
 
 allprojects {
     group = "com.labijie"
-    version = "1.4.0"
+    version = "1.4.1"
 
     infra {
         useDefault {
@@ -14,7 +14,6 @@ allprojects {
             infraBomVersion = Versions.infraBom
             kotlinVersion = Versions.kotlin
         }
-        usePublishPlugin()
     }
 }
 subprojects {

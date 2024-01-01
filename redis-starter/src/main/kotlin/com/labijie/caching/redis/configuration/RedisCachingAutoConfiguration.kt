@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Configuration
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(CachingAutoConfiguration::class)
 @ConditionalOnMissingBean(ICacheManager::class)
-@ConditionalOnProperty(name = ["infra.caching.disabled"], havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(name = ["infra.caching.provider"], havingValue = "redis", matchIfMissing = true)
 class RedisCachingAutoConfiguration {
 
     @Bean

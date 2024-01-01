@@ -11,11 +11,10 @@
   ],
   "properties": [
     {
-      "name": "infra.caching.disabled",
-      "type": "java.lang.Boolean",
+      "name": "infra.caching.provider",
+      "type": "java.lang.String",
       "sourceType": "com.labijie.caching.configuration.CachingProperties",
-      "defaultValue": false,
-      "description": "disable cache"
+      "description": "set caching provider."
     },
 
     {
@@ -29,6 +28,22 @@
       "type": "java.lang.Boolean",
       "defaultValue": false,
       "description": "auto compact memory"
+    }
+  ],
+  "hints": [
+    {
+      "name": "infra.caching.provider",
+      "values": [
+        {
+          "value": "memory"
+        },
+        {
+          "value": "redis"
+        },
+        {
+          "value": "none"
+        }
+      ]
     }
   ]
 }

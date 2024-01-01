@@ -15,6 +15,7 @@ import org.springframework.beans.factory.InitializingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -25,6 +26,7 @@ import org.springframework.context.annotation.Import
  * @date 2019-03-22
  */
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(CachingProperties::class)
 class CachingAutoConfiguration {
 
     companion object {
@@ -32,7 +34,19 @@ class CachingAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = ["infra.caching.disabled"], havingValue = "false", matchIfMissing = true)
+    @ConditionalOnProperty(name = ["infra.caching.provider"], havingValue = "none", matchIfMissing = false)
+    protected class NoopCacheAutoConfiguration : InitializingBean {
+        @Bean
+        fun noopCacheManager(): NoopCacheManager {
+            return NoopCacheManager.INSTANCE
+        }
+
+        override fun afterPropertiesSet() {
+            logger.info("The cache has been disabled.")
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
     @Import(JdbcCachingAutoConfiguration::class)
     protected class CachingAspectAutoConfiguration {
         @Bean
@@ -87,19 +101,5 @@ class CachingAutoConfiguration {
             }
         }
     }
-
-    @Configuration(proxyBeanMethods = false)
-    @ConditionalOnProperty(name = ["infra.caching.disabled"], havingValue = "true", matchIfMissing = false)
-    protected class NoopCacheAutoConfiguration : InitializingBean {
-        @Bean
-        fun noopCacheManager(): NoopCacheManager {
-            return NoopCacheManager.INSTANCE
-        }
-
-        override fun afterPropertiesSet() {
-            logger.info("The cache has been disabled.")
-        }
-    }
-
 
 }

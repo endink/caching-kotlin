@@ -9,4 +9,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties
  * @Description:
  */
 @ConfigurationProperties("infra.caching")
-data class CachingProperties(var disabled: Boolean = false)
+data class CachingProperties(var provider: String? = null)
