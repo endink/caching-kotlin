@@ -80,7 +80,11 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
                         if (it.id <= 100) {
                             throw CacheException("Kryo register class id must be greater than 100 ( start with 101 )")
                         }
-                        this.register(it)
+                        if(it.serializer != null) {
+                            this.register(it.clazz, it.serializer, it.id)
+                        }else {
+                            this.register(it.clazz, it.id)
+                        }
                     }
                 }
             }

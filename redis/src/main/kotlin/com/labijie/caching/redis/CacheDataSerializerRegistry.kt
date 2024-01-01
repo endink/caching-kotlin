@@ -19,28 +19,8 @@ object CacheDataSerializerRegistry {
     fun getSerializer(name: String): ICacheDataSerializer {
         val serializerName = name.lowercase()
         return serializers.getOrPut(serializerName) {
-            createSerializer(serializerName)
-        }
-    }
-
-    private fun createSerializer(serializerName: String): ICacheDataSerializer {
-        return when (serializerName) {
-            JacksonCacheDataSerializer.NAME -> {
-                val ser = JacksonCacheDataSerializer()
-                serializers[serializerName] = ser
-                ser
-            }
-            KryoCacheDataSerializer.NAME -> {
-                val ser = KryoCacheDataSerializer(KryoOptions())
-                serializers[serializerName] = ser
-                ser
-            }
-            JsonSmileDataSerializer.NAME -> {
-                val ser = JsonSmileDataSerializer()
-                serializers[serializerName] = ser
-                ser
-            }
-            else -> throw CacheException("Cant find cache data serializer with name '$serializerName'")
+            logger.warn("Unable to find caching data serializer named: '${serializerName}', jackson serializer was used.")
+            return JacksonCacheDataSerializer()
         }
     }
 

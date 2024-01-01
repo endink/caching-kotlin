@@ -62,7 +62,7 @@ class RedisCachingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(JsonSmileDataSerializer::class)
-    fun kryoCacheDataSerializer(customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>): JsonSmileDataSerializer {
+    fun jsonSmileDataSerializer(customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>): JsonSmileDataSerializer {
         val smileMapper = JsonSmileDataSerializer.createObjectMapper()
         customizers.orderedStream().forEach {
             it.customize(smileMapper)
