@@ -12,6 +12,7 @@ import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
@@ -45,14 +46,18 @@ class RedisCachingAutoConfiguration {
         return JacksonCacheDataSerializer(objectMapper)
     }
 
-    @Bean
-    @ConditionalOnMissingBean(KryoCacheDataSerializer::class)
-    fun kryoCacheDataSerializer(customizers: ObjectProvider<IKryoCacheDataSerializerCustomizer>): KryoCacheDataSerializer {
-        val kryoOptions = KryoOptions()
-        customizers.orderedStream().forEach {
-            it.customize(kryoOptions)
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name=["com.esotericsoftware.kryo.Kryo"])
+    protected class KryoCachingSerializerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(KryoCacheDataSerializer::class)
+        fun kryoCacheDataSerializer(customizers: ObjectProvider<IKryoCacheDataSerializerCustomizer>): KryoCacheDataSerializer {
+            val kryoOptions = KryoOptions()
+            customizers.orderedStream().forEach {
+                it.customize(kryoOptions)
+            }
+            return KryoCacheDataSerializer(kryoOptions)
         }
-        return KryoCacheDataSerializer(kryoOptions)
     }
 
     @Bean
