@@ -190,7 +190,7 @@ use configuration to off cache:
 ```yaml
 infra:
   caching:
-    disabled: true
+    provider: none
 ```
 
 ### Work with redis
