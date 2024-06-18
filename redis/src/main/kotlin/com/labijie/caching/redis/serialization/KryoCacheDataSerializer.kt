@@ -102,9 +102,6 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
             Iterable::class.java -> ArrayList::class.java
             else -> clazz
         }
-        if (javaType.isInterface) {
-            throw CacheDataDeserializationException("Interface type was unsupported when use kryo serializer.")
-        }
         return kryo.deserialize(data, javaType)
     }
 
