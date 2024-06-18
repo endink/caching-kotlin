@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
  * @author Anders Xiao
  * @date 2019-02-16
  */
-internal abstract class PooledKryo(poolSize: Int, outputBufferSizeBytes:Int = 4 * 1024) {
+internal abstract class PooledKryo(poolSize: Int, outputBufferSizeBytes:Int = 4 * 1024): IKryoSerializer {
 
     class Pooled<TValue> internal constructor(val instance:TValue, private val returnObject:()->Unit):AutoCloseable {
         override fun close() {
@@ -104,7 +104,7 @@ internal abstract class PooledKryo(poolSize: Int, outputBufferSizeBytes:Int = 4 
         }
     }
 
-    fun serialize(data: Any): ByteArray {
+    override fun serialize(data: Any): ByteArray {
         val output = outputPool.obtain()
         try {
             output.reset()
@@ -124,14 +124,15 @@ internal abstract class PooledKryo(poolSize: Int, outputBufferSizeBytes:Int = 4 
         }
     }
 
-    fun deserialize(data: ByteArray, clazz: Class<*>): Any {
-        val input = Input(data)
-        val kryo = kryoPool.obtain()
-        try {
-            return kryo.readObject(input, clazz)
-        } finally {
-            kryoPool.free(kryo)
-            input.close()
+    override fun deserialize(data: ByteArray, clazz: Class<*>): Any {
+        Input(data).use {
+            val kryo = kryoPool.obtain()
+            try {
+                return kryo.readObject(it, clazz)
+            } finally {
+                kryoPool.free(kryo)
+            }
         }
+
     }
 }

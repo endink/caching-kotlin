@@ -5,12 +5,9 @@ import com.esotericsoftware.kryo.Serializer
 import com.esotericsoftware.kryo.serializers.DefaultSerializers
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheException
-import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import com.labijie.caching.redis.serialization.kryo.DateSerializer
+import com.labijie.caching.redis.serialization.kryo.*
 import com.labijie.caching.redis.serialization.kryo.PooledKryo
-import com.labijie.caching.redis.serialization.kryo.URISerializer
-import com.labijie.caching.redis.serialization.kryo.UUIDSerializer
 import java.lang.reflect.Type
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -23,30 +20,33 @@ import java.util.concurrent.ConcurrentHashMap
  * @author Anders Xiao
  * @date 2019-09-08
  */
-class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializer {
+open class KryoCacheDataSerializer(private val kryoSerializer: IKryoSerializer?, val kryoOptions: KryoOptions) : ICacheDataSerializer {
 
     companion object {
         const val NAME = "kryo"
     }
 
-    private val kryo: PooledKryo
 
-    init {
-        kryo = object : PooledKryo(kryoOptions.poolSize, kryoOptions.writeBufferSizeBytes) {
+    private val kryo: IKryoSerializer by lazy {
+        kryoSerializer ?: createDefaultSerializer(kryoOptions)
+    }
+
+    protected open fun createDefaultSerializer(options: KryoOptions): IKryoSerializer {
+        return object : PooledKryo(kryoOptions.poolSize, kryoOptions.writeBufferSizeBytes) {
             override fun createKryo(): Kryo {
                 return Kryo().apply {
                     this.isRegistrationRequired = kryoOptions.isRegistrationRequired
                     this.warnUnregisteredClasses = kryoOptions.warnUnregisteredClasses
                     /* kryo default
                     register(int.class, new IntSerializer());
-		            register(String.class, new StringSerializer());
-		            register(float.class, new FloatSerializer());
-		            register(boolean.class, new BooleanSerializer());
-		            register(byte.class, new ByteSerializer());
-		            register(char.class, new CharSerializer());
-		            register(short.class, new ShortSerializer());
-		            register(long.class, new LongSerializer());
-		            register(double.class, new DoubleSerializer());
+                    register(String.class, new StringSerializer());
+                    register(float.class, new FloatSerializer());
+                    register(boolean.class, new BooleanSerializer());
+                    register(byte.class, new ByteSerializer());
+                    register(char.class, new CharSerializer());
+                    register(short.class, new ShortSerializer());
+                    register(long.class, new LongSerializer());
+                    register(double.class, new DoubleSerializer());
 
                      */
                     this.register(BigDecimal::class.java, DefaultSerializers.BigDecimalSerializer() as Serializer<*>, 9)
@@ -80,9 +80,9 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
                         if (it.id <= 100) {
                             throw CacheException("Kryo register class id must be greater than 100 ( start with 101 )")
                         }
-                        if(it.serializer != null) {
+                        if (it.serializer != null) {
                             this.register(it.clazz, it.serializer, it.id)
-                        }else {
+                        } else {
                             this.register(it.clazz, it.id)
                         }
                     }
@@ -92,7 +92,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
     }
 
 
-    override fun deserializeData(type: Type, data: ByteArray): Any {
+    open override fun deserializeData(type: Type, data: ByteArray): Any {
         val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
         val javaType = when (clazz) {
             List::class.java -> ArrayList::class.java
@@ -105,7 +105,7 @@ class KryoCacheDataSerializer(val kryoOptions: KryoOptions) : ICacheDataSerializ
         return kryo.deserialize(data, javaType)
     }
 
-    override fun serializeData(data: Any): ByteArray {
+    open override fun serializeData(data: Any): ByteArray {
         return kryo.serialize(data)
     }
 

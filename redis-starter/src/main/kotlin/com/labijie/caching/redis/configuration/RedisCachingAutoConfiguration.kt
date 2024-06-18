@@ -1,5 +1,7 @@
 package com.labijie.caching.redis.configuration
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.ScopedCacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
@@ -10,7 +12,9 @@ import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
+import com.labijie.caching.redis.serialization.kryo.IKryoSerializer
 import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -38,32 +42,41 @@ class RedisCachingAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-    fun jacksonCacheDataSerializer(customizers: ObjectProvider<IJacksonCacheDataSerializerCustomizer>): JacksonCacheDataSerializer {
-        val objectMapper = JacksonCacheDataSerializer.createObjectMapper()
+    fun jacksonCacheDataSerializer(
+        @Autowired(required = false) objectMapper: ObjectMapper?,
+        customizers: ObjectProvider<IJacksonCacheDataSerializerCustomizer>
+    ): JacksonCacheDataSerializer {
+        val mapper = objectMapper ?: JacksonCacheDataSerializer.createObjectMapper()
         customizers.orderedStream().forEach {
-            it.customize(objectMapper)
+            it.customize(mapper)
         }
         return JacksonCacheDataSerializer(objectMapper)
     }
 
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(name=["com.esotericsoftware.kryo.Kryo"])
+    @ConditionalOnClass(name = ["com.esotericsoftware.kryo.Kryo"])
     protected class KryoCachingSerializerAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(KryoCacheDataSerializer::class)
-        fun kryoCacheDataSerializer(customizers: ObjectProvider<IKryoCacheDataSerializerCustomizer>): KryoCacheDataSerializer {
+        fun kryoCacheDataSerializer(
+            @Autowired(required = false) kryoSerializer: IKryoSerializer?,
+            customizers: ObjectProvider<IKryoCacheDataSerializerCustomizer>
+        ): KryoCacheDataSerializer {
             val kryoOptions = KryoOptions()
             customizers.orderedStream().forEach {
                 it.customize(kryoOptions)
             }
-            return KryoCacheDataSerializer(kryoOptions)
+            return KryoCacheDataSerializer(kryoSerializer, kryoOptions)
         }
     }
 
     @Bean
     @ConditionalOnMissingBean(JsonSmileDataSerializer::class)
-    fun jsonSmileDataSerializer(customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>): JsonSmileDataSerializer {
-        val smileMapper = JsonSmileDataSerializer.createObjectMapper()
+    fun jsonSmileDataSerializer(
+        @Autowired(required = false) mapper: SmileMapper?,
+        customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>
+    ): JsonSmileDataSerializer {
+        val smileMapper = mapper ?: JsonSmileDataSerializer.createObjectMapper()
         customizers.orderedStream().forEach {
             it.customize(smileMapper)
         }
@@ -75,7 +88,7 @@ class RedisCachingAutoConfiguration {
         serializers: ObjectProvider<ICacheDataSerializer>,
         config: RedisCacheConfig,
 
-    ): ScopedCacheManager {
+        ): ScopedCacheManager {
         serializers.orderedStream().forEach {
             CacheDataSerializerRegistry.registerSerializer(it)
         }
