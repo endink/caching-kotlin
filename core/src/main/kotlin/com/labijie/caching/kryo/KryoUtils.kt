@@ -76,7 +76,7 @@ object KryoUtils {
         this.register(Charset::class.java, 73)
         this.register(URL::class.java, 74)
         this.register(Duration::class.java, DurationSerializer, 75)
-        this.register(LocalDateTime::class.java, 76)
-        this.register(Instant::class.java, 77)
+        this.register(LocalDateTime::class.java, LocalDateTimeSerializer, 76)
+        this.register(Instant::class.java, InstantSerializer, 77)
     }
 }
