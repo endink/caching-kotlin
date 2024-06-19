@@ -8,8 +8,8 @@ import com.labijie.caching.orm.TestEntity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.autoconfigure.data.jdbc.DataJdbcTest
-import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -25,8 +25,8 @@ import kotlin.test.Test
  * @author Anders Xiao
  * @date 2019-03-25
  */
+@EnableAutoConfiguration
 @ExtendWith(SpringExtension::class)
-//@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DataJdbcTest
 @Transactional(propagation = Propagation.NEVER)
 @ContextConfiguration(classes = [CachingAutoConfiguration::class, TestConfiguration::class, TransactionalConfiguration::class])

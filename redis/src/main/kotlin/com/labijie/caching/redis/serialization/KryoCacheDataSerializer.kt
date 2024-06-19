@@ -1,19 +1,28 @@
 package com.labijie.caching.redis.serialization
 
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.Serializer
-import com.esotericsoftware.kryo.serializers.DefaultSerializers
+import com.esotericsoftware.kryo.serializers.DefaultSerializers.*
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheException
+import com.labijie.caching.kryo.*
+import com.labijie.caching.kryo.DateSerializer
+import com.labijie.caching.kryo.KryoUtils.registerBaseTypes
+import com.labijie.caching.kryo.URISerializer
+import com.labijie.caching.kryo.UUIDSerializer
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.serialization.kryo.*
-import com.labijie.caching.redis.serialization.kryo.PooledKryo
 import java.lang.reflect.Type
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.net.URI
+import java.net.URL
+import java.nio.charset.Charset
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListMap
 
 /**
  * Created with IntelliJ IDEA.
@@ -49,32 +58,9 @@ open class KryoCacheDataSerializer(private val kryoSerializer: IKryoSerializer?,
                     register(double.class, new DoubleSerializer());
 
                      */
-                    this.register(BigDecimal::class.java, DefaultSerializers.BigDecimalSerializer() as Serializer<*>, 9)
-                    this.register(BigInteger::class.java, DefaultSerializers.BigIntegerSerializer(), 10)
-                    this.register(BitSet::class.java, 11)
-                    this.register(URI::class.java, URISerializer, 12)
-                    this.register(UUID::class.java, UUIDSerializer, 13)
-                    this.register(HashMap::class.java, 14)
-                    this.register(ArrayList::class.java, 15)
-                    this.register(LinkedList::class.java, 16)
-                    this.register(HashSet::class.java, 17)
-                    this.register(TreeSet::class.java, 18)
-                    this.register(Hashtable::class.java, 19)
-                    this.register(Date::class.java, DateSerializer, 20)
-                    this.register(Calendar::class.java, 21)
-                    this.register(ConcurrentHashMap::class.java, 22)
-                    this.register(Vector::class.java, 23)
-                    this.register(StringBuffer::class.java, 24)
-                    this.register(ByteArray::class.java, 25)
-                    this.register(CharArray::class.java, 26)
-                    this.register(IntArray::class.java, 27)
-                    this.register(FloatArray::class.java, 28)
-                    this.register(DoubleArray::class.java, 29)
-                    this.register(DoubleArray::class.java, 30)
-                    this.register(ShortArray::class.java, 31)
+                    registerBaseTypes()
 
-                    this.register(LinkedHashMap::class.java, 40)
-                    this.register(LinkedHashSet::class.java, 41)
+
 
                     kryoOptions.getRegistry().forEach {
                         if (it.id <= 100) {

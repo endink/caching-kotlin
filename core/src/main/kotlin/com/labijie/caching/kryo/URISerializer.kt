@@ -1,4 +1,4 @@
-package com.labijie.caching.redis.serialization.kryo
+package com.labijie.caching.kryo
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.Serializer

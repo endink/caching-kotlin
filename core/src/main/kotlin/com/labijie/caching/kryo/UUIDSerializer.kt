@@ -1,4 +1,4 @@
-package com.labijie.caching.redis.serialization.kryo
+package com.labijie.caching.kryo
 
 import java.util.UUID
 import com.esotericsoftware.kryo.Kryo

@@ -3,6 +3,7 @@ package com.labijie.caching.redis.serialization.kryo
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.*
 import com.esotericsoftware.kryo.util.Pool
+import com.labijie.caching.kryo.IKryoSerializer
 import java.nio.ByteBuffer
 
 /**

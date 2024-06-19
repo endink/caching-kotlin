@@ -2,7 +2,7 @@
  * @author Anders Xiao
  * @date 2024-06-18
  */
-package com.labijie.caching.redis.serialization.kryo
+package com.labijie.caching.kryo
 
 
 interface IKryoSerializer {

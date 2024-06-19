@@ -12,7 +12,7 @@ import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
-import com.labijie.caching.redis.serialization.kryo.IKryoSerializer
+import com.labijie.caching.kryo.IKryoSerializer
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
