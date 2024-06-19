@@ -101,6 +101,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                 ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
         val r = name.ifBlank { NULL_REGION_NAME }
+        val serializer = config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME }
+
         var client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
             val (cli, conn) = createClientAndConnection(config.url)
@@ -110,7 +112,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                 n,
                 conn,
                 cli,
-                config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME })
+                serializer)
             client = newClient
             newClient
         }
@@ -155,11 +157,6 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         return ser.deserializeData(type, data)
     }
 
-
-    private fun serializeData(serializerName: String, data: Any): ByteArray {
-        val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
-        return ser.serializeData(data)
-    }
 
     private fun validateKey(key: String) {
         if (key.isBlank()) {
@@ -262,8 +259,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
             (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
             (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
-            this.serializeData(client.serializer, data).toRedisValue(),
-            client.serializer.toRedisValue()
+            client.serializer.serializeData(data).toRedisValue(),
+            client.serializer.name.toRedisValue()
         )
 
         val command = client.connection.sync()

@@ -9,7 +9,15 @@ import io.lettuce.core.api.StatefulRedisConnection
  * @author Anders Xiao
  * @date 2019-03-20
  */
-class RedisClientInternal(val region:String, val connection: StatefulRedisConnection<String, RedisValue>, private val client: RedisClient, val serializer: String):AutoCloseable {
+class RedisClientInternal(
+    val region:String,
+    val connection: StatefulRedisConnection<String, RedisValue>,
+    private val client: RedisClient,
+    private val serializerName: String):AutoCloseable {
+
+    val serializer by lazy {
+        CacheDataSerializerRegistry.getSerializer(serializerName)
+    }
     override fun close() {
         connection.close()
         this.client.shutdown()
