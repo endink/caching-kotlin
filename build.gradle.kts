@@ -29,7 +29,7 @@ subprojects {
                     developer("AndersXiao", "sharping@outlook.com")
                 }
 
-                toGithubPackages("endink", "caching-kotlin")
+                //toGithubPackages("endink", "caching-kotlin")
             }
         }
     }
