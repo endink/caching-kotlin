@@ -1,0 +1,8 @@
+[
+  {
+    "name": "kotlin.annotation.AnnotationRetention",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

@@ -8,20 +8,23 @@ import com.labijie.caching.getOrSet
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisRegionOptions
-import org.junit.jupiter.api.Assertions
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import java.time.Duration
 import java.util.*
 import kotlin.test.Test
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao
  * @date 2019-03-20
  */
-abstract class RedisCacheManagerTester {
+open class RedisCacheManagerTester {
     private lateinit var redisCache: ICacheManager
 
     @BeforeTest
@@ -62,7 +65,7 @@ abstract class RedisCacheManagerTester {
         return RedisCacheManager(redisConfig)
     }
 
-    protected abstract fun getSerializerName():String
+    protected open fun getSerializerName():String = JacksonCacheDataSerializer.NAME
 
     /**
      * Method: get(String key, String region)
@@ -133,7 +136,7 @@ abstract class RedisCacheManagerTester {
         redisCache.set("b", lst, 5000L, TimePolicy.Absolute, "region2")
         redisCache.get("b", getGenericType(List::class.java,TestData::class.java))
         println(lst)
-        Assertions.assertTrue(lst.isNotEmpty())
+        assert(lst.isNotEmpty())
     }
 
 
@@ -193,12 +196,12 @@ abstract class RedisCacheManagerTester {
 
         val tr = object: TypeReference<List<TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assertions.assertNotNull(value)
+        assertNotNull(value)
 
         val listData = value as List<*>
-        Assertions.assertEquals(3, listData.size)
+        assertEquals(3, listData.size)
 
-        Assertions.assertArrayEquals(list.toTypedArray(), listData.toTypedArray())
+        assertArrayEquals(list.toTypedArray(), listData.toTypedArray())
     }
 
     @Test
@@ -213,12 +216,12 @@ abstract class RedisCacheManagerTester {
 
         val tr = object: TypeReference<Map<String, TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assertions.assertNotNull(value)
+        assertNotNull(value)
 
         val listData = value as Map<*, *>
-        Assertions.assertEquals(3, listData.size)
+        assertEquals(3, listData.size)
 
-        Assertions.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
+        assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
     }
 
     @Test
@@ -232,33 +235,34 @@ abstract class RedisCacheManagerTester {
         val map2:Map<String, TestData> = mapOf(
             "123" to TestData(),
             "234" to TestData(),
-            "345" to TestData())
+        )
 
-        val data = redisCache.getOrSet("list-test", Duration.ofSeconds(60)){ map }
+        val data = redisCache.getOrSet("list-test",  null,Duration.ofSeconds(60)){ map }
 
         val data2 = redisCache.getOrSet("list-test", Duration.ofSeconds(60)){
             map2
         }
 
-        Assertions.assertTrue(map === data)
+        assert(map === data)
 
-        Assertions.assertNotNull(data)
-        Assertions.assertNotNull(data2)
-        Assertions.assertArrayEquals(data!!.toList().toTypedArray(), data2!!.toList().toTypedArray())
+        assertNotNull(data)
+        assertNotNull(data2)
+        assertArrayEquals(data.toList().toTypedArray(), data2.toList().toTypedArray())
 
         val tr = object: TypeReference<Map<String, TestData>>(){}
         val value = redisCache.get("list-test", tr.type)
-        Assertions.assertNotNull(value)
+        assertNotNull(value)
 
         val listData = value as Map<*, *>
-        Assertions.assertEquals(3, listData.size)
+        assertEquals(3, listData.size)
 
-        Assertions.assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
+        assertArrayEquals(map.toList().toTypedArray(), listData.toList().toTypedArray())
     }
 
     private data class TestData(
         var intValue:Int = Random.nextInt(),
         var stringValue:String = UUID.randomUUID().toString()
+
     )
 
 }

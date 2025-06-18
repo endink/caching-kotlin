@@ -24,7 +24,7 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
                 configure(
                     DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false
                 )
-                //在序列化时日期格式默认为 yyyy-MM-dd'T'HH:mm:ss.SSSZ
+
                 configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
                 configure(SerializationFeature.WRITE_ENUMS_USING_INDEX, true)
                 registerKotlinModule()

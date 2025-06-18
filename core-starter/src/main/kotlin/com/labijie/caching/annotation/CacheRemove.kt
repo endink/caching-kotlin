@@ -15,5 +15,5 @@ import java.util.concurrent.TimeUnit
 annotation class CacheRemove(
     val key:String,
     val region:String = "",
-    val delayMills:Long = 2000) {
+    val delayMills:Long = 0) {
 }

@@ -33,11 +33,11 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
     @Around("cacheMethod()")
     fun aroundScope(joinPoint: ProceedingJoinPoint): Any? {
         val method = (joinPoint.signature as MethodSignature).method
-        val getUsed = (method.returnType != Void::class.java) && cacheScopeHolder.cacheRequired(CacheOperation.Get)
-        val setUsed = (method.returnType != Void::class.java) && cacheScopeHolder.cacheRequired(CacheOperation.Set)
+        val getUsed = (method.returnType != Void.TYPE) && cacheScopeHolder.cacheRequired(CacheOperation.Get)
+        val setUsed = (method.returnType != Void.TYPE) && cacheScopeHolder.cacheRequired(CacheOperation.Set)
 
         var keyAndRegion: Pair<String, String>? = null
-        val cacheAnnotation: Cache? = if (getUsed) getCacheSettings(method) else null
+        val cacheAnnotation: Cache? = if (getUsed) method.getAnnotation(Cache::class.java) else null
         if (getUsed && cacheAnnotation != null) {
             try {
                 keyAndRegion = parseKeyAndRegion(cacheAnnotation.key, cacheAnnotation.region, method, joinPoint.args)
@@ -96,9 +96,4 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         return returnValue
     }
 
-    private fun getCacheSettings(method: Method): Cache? {
-        return method.annotations.first {
-            it.annotationClass == Cache::class
-        } as Cache
-    }
 }

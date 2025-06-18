@@ -10,3 +10,7 @@ dependencies {
     testImplementation("org.springframework:spring-tx")
     testImplementation("com.h2database:h2")
 }
+
+graalvmNative {
+    testSupport.set(true)
+}

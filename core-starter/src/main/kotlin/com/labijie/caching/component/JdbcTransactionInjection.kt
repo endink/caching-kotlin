@@ -1,3 +1,9 @@
+/**
+ * Created with IntelliJ IDEA.
+ * @author Anders Xiao
+ * @date 2019-03-26
+ */
+
 package com.labijie.caching.component
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
@@ -9,51 +15,45 @@ import org.springframework.transaction.TransactionDefinition
 import org.springframework.transaction.support.DefaultTransactionDefinition
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import java.util.*
 
-/**
- * Created with IntelliJ IDEA.
- * @author Anders Xiao
- * @date 2019-03-26
- */
+
 class JdbcTransactionInjection:ApplicationContextAware, ITransactionInjection {
-    private var transactionManager: Optional<PlatformTransactionManager>? = null
+
     private lateinit var applicationContext: ApplicationContext
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         this.applicationContext = applicationContext
     }
 
-    private fun ensureManager(){
-        if(this.transactionManager == null){
-            this.transactionManager = try {
-                val m = applicationContext.getBean(PlatformTransactionManager::class.java)
-                Optional.of(m)
-            }catch (e:NoSuchBeanDefinitionException){
-                Optional.empty()
-            }
+    private val transactionManager by lazy {
+        try {
+            applicationContext.getBean(PlatformTransactionManager::class.java)
+        }catch (_: NoSuchBeanDefinitionException) {
+            null
         }
     }
 
     override fun hookTransaction(action: () -> Unit) {
-        TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
-            override fun afterCommit() {
-                action()
-            }
-        })
+        if(isInTransaction) {
+            TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
+                override fun afterCommit() {
+                    action()
+                }
+            })
+        }else {
+            action()
+        }
     }
 
     override val isInTransaction: Boolean
         get() {
-            this.ensureManager()
-            if(this.transactionManager!!.isPresent) {
+            if(this.transactionManager != null) {
                 val def = DefaultTransactionDefinition()
                 def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
 
                 return try {
-                    this.transactionManager!!.get().getTransaction(def)
-                    return true
-                } catch (ex: IllegalTransactionStateException) {
+                    this.transactionManager?.getTransaction(def) != null
+                } catch (_: IllegalTransactionStateException) {
                     false
                 }
             }else{

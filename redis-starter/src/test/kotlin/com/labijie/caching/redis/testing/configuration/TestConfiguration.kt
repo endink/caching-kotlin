@@ -19,9 +19,9 @@ class TestConfiguration {
     fun simpleTestingBean(): SimpleTestingBean {
         return SimpleTestingBean()
     }
-
-    @Bean
-    fun cacheManager(factory:CacheManagerFactory):ICacheManager{
-        return factory.createCacheManager()
-    }
+//
+//    @Bean
+//    fun cacheManager(factory:CacheManagerFactory):ICacheManager{
+//        return factory.createCacheManager()
+//    }
 }

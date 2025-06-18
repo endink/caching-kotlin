@@ -55,7 +55,8 @@ class MemoryCacheManagerTester {
         memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
 
         val t1  = memoryCache.get("t", getGenericType(List::class.java,Int::class.java),"b")
-        val ttt = t1 as List<Int>
+        assert(t1 is List<*>)
+        val ttt = t1 as List<*>
         Assertions.assertNotNull(ttt)
         Assertions.assertTrue(t.minus(ttt).isEmpty())
     }
@@ -66,7 +67,9 @@ class MemoryCacheManagerTester {
         memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
 
         val t1  = memoryCache.get("t", getGenericType(GenericStub::class.java,Int::class.java),"b")
-        val ttt = t1 as GenericStub<Int>
+
+        assert(t1 is GenericStub<*>)
+        val ttt = t1 as GenericStub<*>
         Assertions.assertNotNull(ttt)
         Assertions.assertTrue(ttt.item == 1)
     }
@@ -77,9 +80,18 @@ class MemoryCacheManagerTester {
         memoryCache.set("t",t,10_000, TimePolicy.Absolute, "b")
 
         val t1  = memoryCache.get("t", getGenericType(List::class.java, getGenericType(GenericStub::class.java,Int::class.java)),"b")
-        val ttt = t1 as List<GenericStub<Int>>
+
+        assert(t1 is List<*>)
+        val ttt = t1 as List<*>
         Assertions.assertNotNull(ttt)
-        Assertions.assertTrue(ttt[0].item == 1)
+
+        assert(ttt.isNotEmpty())
+
+        assert(ttt[0] is GenericStub<*>)
+
+        val item = ttt[0] as? GenericStub<*>
+        val value = item?.item
+        assert(value != null && value is Int && value  == 1)
     }
 
     /**
@@ -190,9 +202,9 @@ class MemoryCacheManagerTester {
             val regionName = method.invoke(memoryCache, "a|b") as String
             Assertions.assertEquals("a", regionName)
 
-        } catch (e: NoSuchMethodException) {
-        } catch (e: IllegalAccessException) {
-        } catch (e: InvocationTargetException) {
+        } catch (_: NoSuchMethodException) {
+        } catch (_: IllegalAccessException) {
+        } catch (_: InvocationTargetException) {
         }
 
     }

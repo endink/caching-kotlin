@@ -1,5 +1,6 @@
 package com.labijie.caching.configuration
 
+import JdbcCachingAutoConfiguration
 import com.labijie.caching.*
 import com.labijie.caching.aspect.CacheGetAspect
 import com.labijie.caching.aspect.CacheRemoveAspect
@@ -7,18 +8,23 @@ import com.labijie.caching.aspect.CacheScopeAspect
 import com.labijie.caching.component.HashedWheelDelayTimer
 import com.labijie.caching.component.IDelayTimer
 import com.labijie.caching.component.ITransactionInjection
+import com.labijie.caching.component.JdbcTransactionInjection
 import com.labijie.caching.component.NoopTransactionInjection
 import com.labijie.caching.memory.MemoryCacheManager
 import com.labijie.caching.memory.MemoryCacheOptions
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.boot.SpringBootConfiguration
+import org.springframework.boot.autoconfigure.AutoConfigureOrder
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
+import org.springframework.core.Ordered
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,6 +33,7 @@ import org.springframework.context.annotation.Import
  */
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(CachingProperties::class)
+@AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 class CachingAutoConfiguration {
 
     companion object {
@@ -47,8 +54,16 @@ class CachingAutoConfiguration {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @Import(JdbcCachingAutoConfiguration::class)
+    @ImportAutoConfiguration(JdbcCachingAutoConfiguration::class)
     protected class CachingAspectAutoConfiguration {
+
+        @Bean
+        @ConditionalOnMissingBean(ITransactionInjection::class)
+        fun noopTransactionInjection(): NoopTransactionInjection {
+            return NoopTransactionInjection()
+        }
+
+
         @Bean
         @ConditionalOnMissingBean(ICacheScopeHolder::class)
         fun threadLocalCacheScopeHolder(): ThreadLocalCacheScopeHolder {
@@ -61,11 +76,6 @@ class CachingAutoConfiguration {
             return HashedWheelDelayTimer()
         }
 
-        @Bean
-        @ConditionalOnMissingBean(ITransactionInjection::class)
-        fun noopTransactionInjection(): NoopTransactionInjection {
-            return NoopTransactionInjection()
-        }
 
         @Bean
         fun cacheRunner(cacheScopeHolder: ICacheScopeHolder): CacheRunner {

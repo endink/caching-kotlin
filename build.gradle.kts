@@ -1,24 +1,29 @@
 
 plugins {
     id("com.labijie.infra") version Versions.infraPlugin
+    id("org.graalvm.buildtools.native") version Versions.nativeBuildTool apply false
 }
 
 allprojects {
     group = "com.labijie"
-    version = "1.4.2"
+    version = "1.5.0"
 
     infra {
         useDefault {
             includeSource = true
             includeDocument = true
             infraBomVersion = Versions.infraBom
-            kotlinVersion = Versions.kotlin
         }
     }
+
 }
 subprojects {
+    //apply(plugin = "org.graalvm.buildtools.native")
+
+
     if(!project.name.startsWith("dummy")){
         infra {
+            plugins.apply("org.graalvm.buildtools.native")
             publishing {
                 pom {
                     description = "labijie caching library"

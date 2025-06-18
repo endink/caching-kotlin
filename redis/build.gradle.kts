@@ -4,5 +4,5 @@ dependencies {
     api("com.fasterxml.jackson.core:jackson-databind")
     api("com.fasterxml.jackson.dataformat:jackson-dataformat-smile")
     api("com.fasterxml.jackson.module:jackson-module-kotlin")
-    api("com.esotericsoftware:kryo")
+    compileOnly("com.esotericsoftware:kryo")
 }

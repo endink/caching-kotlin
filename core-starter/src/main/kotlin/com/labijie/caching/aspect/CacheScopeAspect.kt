@@ -29,9 +29,7 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
     fun aroundScope(joinPoint: ProceedingJoinPoint): Any? {
         val method = (joinPoint.signature as MethodSignature).method
 
-        val cacheScope = method.annotations.first {
-            it.annotationClass == SuppressCache::class
-        } as SuppressCache
+        val cacheScope = method.getAnnotation(SuppressCache::class.java)
 
         CacheScopeObject(cacheScopeHolder, *cacheScope.operations).use {
             return joinPoint.proceed(joinPoint.args)

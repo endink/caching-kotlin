@@ -13,13 +13,8 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.NoSuchBeanDefinitionException
-import org.springframework.context.ApplicationContext
-import org.springframework.context.ApplicationContextAware
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.support.TransactionSynchronization
-import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.lang.reflect.Method
+import kotlin.math.floor
 
 /**
  * Created with IntelliJ IDEA.
@@ -72,7 +67,7 @@ class CacheRemoveAspect(
 
         if (logger.isDebugEnabled) {
             logger.debug(
-                "Cache will be removed after ${Math.floor(cacheRemove.delayMills / 1000.0)} seconds because of CacheRemove annotation" +
+                "Cache will be removed after ${floor(cacheRemove.delayMills / 1000.0)} seconds because of CacheRemove annotation" +
                         "( method:${method.declaringClass.simpleName}.${method.name}, cache key:$key, cache region:$region )."
             )
         }

@@ -28,4 +28,4 @@ abstract class CacheManagerFactory(private val serializerName: String){
 
 class JacksonCacheManagerFactory(): CacheManagerFactory(JsonSmileDataSerializer.NAME)
 
-class KryoCacheManagerFactory():CacheManagerFactory(KryoCacheDataSerializer.NAME)
+class KryoCacheManagerFactory(): CacheManagerFactory(KryoCacheDataSerializer.NAME)

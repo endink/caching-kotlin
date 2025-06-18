@@ -1,5 +1,3 @@
-package com.labijie.caching.configuration
-
 import com.labijie.caching.component.ITransactionInjection
 import com.labijie.caching.component.JdbcTransactionInjection
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
@@ -8,10 +6,10 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 /**
- * Created with IntelliJ IDEA.
  * @author Anders Xiao
- * @date 2019-03-26
+ * @date 2025-06-16
  */
+
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnMissingBean(ITransactionInjection::class)
 class JdbcCachingAutoConfiguration {
@@ -22,5 +20,3 @@ class JdbcCachingAutoConfiguration {
         return JdbcTransactionInjection()
     }
 }
-
-
