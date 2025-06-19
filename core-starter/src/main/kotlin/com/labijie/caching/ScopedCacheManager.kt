@@ -27,10 +27,27 @@ class ScopedCacheManager(private val cacheManager: ICacheManager): ICacheManager
         }
     }
 
-    override fun remove(key: String, region: String?) {
-        if(cacheScopeHolder.cacheRequired(CacheOperation.Remove)) {
-            this.cacheManager.remove(key, region)
+    override fun setMulti(
+        keyAndValues: Map<String, Any>,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?
+    ) {
+        if(cacheScopeHolder.cacheRequired(CacheOperation.Set)) {
+            cacheManager.setMulti(keyAndValues, expireMills, timePolicy, region)
         }
+    }
+
+    override fun remove(key: String, region: String?): Boolean {
+        return if(cacheScopeHolder.cacheRequired(CacheOperation.Remove)) {
+            this.cacheManager.remove(key, region)
+        }else false
+    }
+
+    override fun removeMulti(keys: Iterable<String>, region: String?): Int {
+        return if(cacheScopeHolder.cacheRequired(CacheOperation.Remove)) {
+            this.cacheManager.removeMulti(keys, region)
+        }else 0
     }
 
     override fun refresh(key: String, region: String?): Boolean {

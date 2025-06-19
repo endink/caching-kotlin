@@ -10,6 +10,7 @@ import com.labijie.caching.annotation.SuppressCache
 import com.labijie.caching.component.JdbcTransactionInjection
 import com.labijie.caching.component.NoopTransactionInjection
 import com.labijie.caching.configuration.CachingAutoConfiguration
+import com.labijie.caching.configuration.JdbcCachingAutoConfiguration
 import org.springframework.aot.hint.MemberCategory
 import org.springframework.aot.hint.RuntimeHints
 import org.springframework.aot.hint.RuntimeHintsRegistrar
@@ -37,5 +38,6 @@ class CachingRuntimeHintsRegistrar : RuntimeHintsRegistrar {
         hints.reflection().registerType(NoopTransactionInjection::class.java)
         hints.reflection().registerType(TypeReference.of("com.esotericsoftware.kryo.Kryo"))
         hints.reflection().registerType(TypeReference.of("com.google.common.annotations.concurrent.ConcurrentHashMap"))
+        hints.reflection().registerType(TypeReference.of("org.springframework.transaction.PlatformTransactionManager"))
     }
 }

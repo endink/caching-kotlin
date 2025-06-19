@@ -1,6 +1,5 @@
 package com.labijie.caching.configuration
 
-import JdbcCachingAutoConfiguration
 import com.labijie.caching.*
 import com.labijie.caching.aspect.CacheGetAspect
 import com.labijie.caching.aspect.CacheRemoveAspect
