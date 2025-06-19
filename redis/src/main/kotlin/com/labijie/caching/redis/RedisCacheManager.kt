@@ -9,6 +9,9 @@ import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
+import io.lettuce.core.api.sync.RedisCommands
+import io.lettuce.core.cluster.SlotHash
+import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
 import io.lettuce.core.masterreplica.MasterReplica
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
@@ -36,6 +39,34 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             "result = redis.call('EXPIRE', KEYS[1], ARGV[3]) " + NEW_LINE +
             " end " + NEW_LINE +
             "return result"
+
+    val SET_MULTI_SCRIPT = """
+        local result = 0
+        local count = table.getn(KEYS)
+        for i = 1, count do
+          local baseIndex = (i - 1) * 5
+          redis.call('HMSET', KEYS[i],
+            'absexp', ARGV[baseIndex + 1],
+            'sldexp', ARGV[baseIndex + 2],
+            'data', ARGV[baseIndex + 4],
+            'ser', ARGV[baseIndex + 5])
+          if ARGV[baseIndex + 3] ~= "-1" then
+            redis.call('EXPIRE', KEYS[i], ARGV[baseIndex + 3])
+          end
+          result = result + 1
+        end
+        return result
+        """.trimIndent()
+
+    val DELETE_KEYS_SCRIPT = """
+            local deleted = 0
+            for i, key in ipairs(KEYS) do
+                if redis.call("EXISTS", key) == 1 then
+                    deleted = deleted + redis.call("UNLINK", key)
+                end
+            end
+            return deleted
+        """.trimIndent()
 
 
     companion object {
@@ -81,6 +112,12 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
         private fun ByteArray.toRedisValue(): RedisValue {
             return RedisValue(this)
+        }
+
+        fun Any.toRedisBytes(): ByteArray = when (this) {
+            is String -> this.toByteArray(Charsets.UTF_8)
+            is ByteArray -> this
+            else -> this.toString().toByteArray(Charsets.UTF_8) // ← ⚠️ 对 binary 是错的
         }
     }
 
@@ -232,13 +269,85 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    protected fun removeCore(connection: StatefulRedisConnection<String, RedisValue>, key: String, region: String?) {
-        try {
-            connection.sync().del(key)
-        } catch (ex: RedisException) {
-            throw ex.wrap("Delete key fault ( key: $key, region: $region ).")
+    protected fun removeCore(connection: StatefulRedisConnection<String, RedisValue>, key: String, region: String?): Long {
+        if(key.isBlank()) {
+            return 0
         }
 
+        return try {
+            val r = connection.sync().del(key)
+            if(logger.isDebugEnabled) {
+                logger.debug("Redis key '${key}' delete, return : $r")
+            }
+            r
+        } catch (ex: RedisException) {
+            throw ex.wrap("Delete redis key fault ( key: $key, region: $region ).")
+        }
+    }
+
+    override fun setMulti(keyAndValues: Map<String, Any>, expireMills: Long?, timePolicy: TimePolicy, region: String?) {
+        val useSliding = timePolicy == TimePolicy.Sliding
+        setMultiCore(keyAndValues, region, expireMills, useSliding)
+    }
+
+    private fun setMultiCore(
+        keyAndValues: Map<String, Any>,
+        region: String?,
+        timeoutMills: Long?,
+        useSlidingExpiration: Boolean
+    ) {
+        keyAndValues.keys.forEach { validateKey(it) }
+        keyAndValues.values.forEach {
+                data->
+            if (data::class.java == Any::class.java) {
+                throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
+            }
+
+            if (data::class.java == Any::class.java) {
+                throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
+            }
+        }
+
+        val client = this.getClient(region)
+        val creationTime = System.currentTimeMillis()
+
+        val isCluster = client.connection is StatefulRedisClusterConnection<*, *>
+
+        // 按槽位分组键值对
+        val slotGroups = if (isCluster) {
+            keyAndValues.entries.groupBy { (key, _) ->
+                SlotHash.getSlot(key) // Lettuce 的槽位计算
+            }
+        } else {
+            // 单机模式 - 所有键在同一个"槽位"
+            mapOf(0 to keyAndValues.entries.toList())
+        }
+
+        slotGroups.forEach { (_, entries) ->
+            val keys = entries.map { it.key }.toTypedArray()
+
+            val values = entries.flatMap { (_, value) ->
+                listOf(
+                    (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
+                    (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
+                    (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
+                    client.serializer.serializeData(value).toRedisValue(),
+                    client.serializer.name.toRedisValue()
+                )
+            }.toTypedArray()
+
+            val command = client.connection.sync()
+            val result = if(isCluster) {
+                command.eval<Long?>(SET_MULTI_SCRIPT, ScriptOutputType.INTEGER, keys, *values) ?: 0
+            }else {
+                val script = command.scriptLoad(SET_MULTI_SCRIPT)
+                command.evalsha<Long?>(script, ScriptOutputType.INTEGER, keys, *values) ?: 0
+            }
+
+            if (result < 1L) {
+                logger.error("Put multi data to redis cache fault, script result: $result (  keys: ${keys.joinToString(", ")}, region: $region ).")
+            }
+        }
     }
 
     protected fun setCore(
@@ -263,43 +372,19 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             client.serializer.name.toRedisValue()
         )
 
+        val isCluster = client.connection is StatefulRedisClusterConnection<*, *>
         val command = client.connection.sync()
 
-        val script = command.scriptLoad(SET_SCRIPT)
-        val result = command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
+        val result = if(isCluster) {
+            command.eval<Long?>(SET_SCRIPT, ScriptOutputType.INTEGER, arrayOf(key), *values)
+        }else {
+            val script = command.scriptLoad(SET_SCRIPT)
+            command.evalsha<Long?>(script, ScriptOutputType.INTEGER, arrayOf(key), *values)
+        }
 
         if (result != 1L) {
             logger.error("Put data to redis cache fault, script result: ${result?.toString() ?: "<null>"} (  key: $key, region: $region ).")
         }
-
-        //事务不能支持多线程： https://github.com/lettuce-io/lettuce-core/issues/67
-//        val timeoutSeconds = (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT)
-//        if (timeoutSeconds != NOT_PRESENT) {
-//            val result = command.multi()
-//            if (result != "OK") {
-//                logger.error("Put data to redis cache fault, redis multi return '$result' (  key: $key, region: $region ).")
-//            }
-//        }
- //       val keyArray = key.toByteArray(Charsets.UTF_8)
-//        command.hmset(
-//            keyArray, mapOf(
-//                ABSOLUTE_EXPIRATION_ARRAY_KEY to (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toByteArray(),
-//                SLIDING_EXPIRATION_ARRAY_KEY to (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toByteArray(),
-//                DATA_ARRAY_KEY to this.serializeData(client.serializer, data),
-//                SERIALIZER_ARRAY_KEY to client.serializer.toByteArray(Charsets.UTF_8)
-//            )
-//        )
-//        if (timeoutSeconds != NOT_PRESENT) {
-//            command.expire(keyArray, timeoutSeconds)
-//        }
-//
-//        val result = if (timeoutSeconds != NOT_PRESENT) {
-//            command.exec()
-//        } else {
-//            null
-//        }
-
-
     }
 
     private fun getCore(key: String, region: String?, type: Type): Any? {
@@ -343,8 +428,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     ) {
         validateKey(key)
         if (data::class.java == Any::class.java) {
-            logger.warn("Cache put operation is ignored because the class '${data::class.java.simpleName}' cannot be deserialized.")
-            return
+            throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
         }
         try {
             this.setCore(key, region, data, expireMills, timePolicy == TimePolicy.Sliding)
@@ -353,11 +437,65 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    override fun remove(key: String, region: String?) {
+    private fun executeDeleteScript(isCluster: Boolean, connection: RedisCommands<String, RedisValue>, keys: Collection<String>): Long {
+        return if(isCluster) {
+            connection.eval<Long?>(
+                DELETE_KEYS_SCRIPT,
+                ScriptOutputType.INTEGER,
+                keys.toTypedArray()
+            ) ?: 0L
+        } else {
+            val script = connection.scriptLoad(DELETE_KEYS_SCRIPT)
+            connection.evalsha<Long?>(
+                script,
+                ScriptOutputType.INTEGER,
+                keys.toTypedArray()
+            ) ?: 0L
+        }
+    }
+
+    override fun removeMulti(keys: Iterable<String>, region: String?): Int {
+        val validKeys = keys.filter { it.isNotBlank() }
+        if (validKeys.isEmpty()) return 0
+
+        val client = this.getClient(region)
+        val connection = client.connection.sync()
+
+        val isCluster = connection is StatefulRedisClusterConnection<*, *>
+        // 按哈希槽分组键
+        val slotGroups = validKeys.groupBy { key ->
+            if (isCluster) {
+                SlotHash.getSlot(key) // Lettuce 的槽位计算
+            } else {
+                0 // 单机模式使用固定槽位
+            }
+        }
+
+        var totalDeleted = 0L
+        slotGroups.values.forEach { groupKeys ->
+            if (groupKeys.size == 1) {
+                // 单键直接删除
+                connection.del(groupKeys.first())
+                totalDeleted++
+            } else {
+                // 每组键执行脚本
+                totalDeleted += executeDeleteScript(isCluster,connection, groupKeys)
+            }
+        }
+
+        if (logger.isDebugEnabled) {
+            logger.debug("Deleted $totalDeleted/${validKeys.size} keys: ${validKeys.joinToString()}")
+        }
+
+        return totalDeleted.toInt()
+    }
+
+    override fun remove(key: String, region: String?): Boolean {
         this.validateKey(key)
         try {
             val client = this.getClient(region)
-            this.removeCore(client.connection, key, region)
+            val count = this.removeCore(client.connection, key, region)
+            return count > 0
         } catch (ex: RedisException) {
             throw ex.wrap("Remove cache data fault ( key: $key, region: $region ).")
         }

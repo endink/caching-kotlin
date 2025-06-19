@@ -98,13 +98,36 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         cache.set(fullKey, data, options)
     }
 
-    override fun remove(key: String, region: String?) {
+    override fun setMulti(
+        keyAndValues: Map<String, Any>,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?
+    ) {
+        keyAndValues.forEach { (key, value) ->
+            set(key, value, expireMills, timePolicy, region)
+        }
+    }
+
+    override fun remove(key: String, region: String?): Boolean {
         this.validateRegion(region)
 
         val name = getRegionName(region)
         val fullKey = this.getFullKey(name, key)
 
-        cache.remove(fullKey)
+        return cache.remove(fullKey)
+    }
+
+    override fun removeMulti(keys: Iterable<String>, region: String?): Int {
+        this.validateRegion(region)
+        var count = 0
+        keys.forEach { key ->
+            val name = getRegionName(region)
+            val fullKey = this.getFullKey(name, key)
+
+            count += if(cache.remove(fullKey)) 1 else 0
+        }
+        return count
     }
 
     override fun refresh(key: String, region: String?): Boolean {

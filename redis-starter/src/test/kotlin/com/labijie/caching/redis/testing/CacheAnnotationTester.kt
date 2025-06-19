@@ -6,7 +6,6 @@ import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.get
 import com.labijie.caching.redis.get
 import com.labijie.caching.redis.testing.bean.SimpleTestingBean
-import com.labijie.caching.redis.testing.configuration.CacheManagerFactory
 import com.labijie.caching.redis.testing.configuration.TestConfiguration
 import com.labijie.caching.redis.testing.model.ArgumentObject
 import org.junit.jupiter.api.Assertions
@@ -15,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
-import org.springframework.test.context.junit4.SpringRunner
 import kotlin.test.BeforeTest
 
 /**

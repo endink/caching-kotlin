@@ -28,7 +28,7 @@ class CacheEntry
      * 获取缓存项的键。
      * @return
      */
-    val key: Any,
+    val key: String,
     private val notifyCacheEntryReleased: Consumer<CacheEntry>,
     private val notifyCacheOfExpiration: Consumer<CacheEntry>
 ) : AutoCloseable {

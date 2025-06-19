@@ -4,11 +4,13 @@ import com.labijie.caching.CacheException
 import com.labijie.caching.CacheItemPriority
 import com.labijie.caching.EvictionReason
 import com.labijie.caching.IChangeToken
+import com.labijie.caching.isNativeImage
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.function.Consumer
 
@@ -18,7 +20,7 @@ import java.util.function.Consumer
  * @date 2019-03-02
  */
 class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
-    private val entries: ConcurrentHashMap<Any, CacheEntry> = ConcurrentHashMap()
+    private val entries: ConcurrentHashMap<String, CacheEntry> = ConcurrentHashMap()
     private var closed: Boolean = false
     private val setEntry: Consumer<CacheEntry>
     private val entryExpirationNotification: Consumer<CacheEntry>
@@ -31,9 +33,9 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         this.entryExpirationNotification = Consumer { this.entryExpired(it) }
         this.expirationScanFrequencyMilliseconds = options.scanFrequency.toMillis()
 
-        if (options.isCompact) {
+        if (options.isCompact && !isNativeImage()) {
             GcNotification.register(null, Consumer {
-                this.doMemoryPreassureCollection()
+                this.doMemoryPressureCollection()
             })
         }
     }
@@ -51,7 +53,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
     val size: Int
         get() = this.entries.size
 
-    fun createEntry(key: Any): CacheEntry {
+    fun createEntry(key: String): CacheEntry {
         checkClosed()
         //该缓存项并不会被添加到缓存队列，而是等待GC 收集时才会被添加。
         return CacheEntry(
@@ -66,7 +68,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
      * @param key
      * @return
      */
-    fun getOrDefault(key: Any, defaultValue: Any?): Any? {
+    fun getOrDefault(key: String, defaultValue: Any?): Any? {
         checkClosed()
 
         var result: Any? = null
@@ -90,7 +92,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         return result ?: defaultValue
     }
 
-    fun remove(key: Any) {
+    fun remove(key: String): Boolean {
         checkClosed()
         val entry = this.entries.remove(key)
         if (entry != null) {
@@ -99,13 +101,14 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         }
 
         startScanForExpiredItems()
+        return entry != null
     }
 
-    fun get(key: Any): Any? {
+    fun get(key: String): Any? {
         return this.getOrDefault(key, null)
     }
 
-    fun <T> set(key: Any, value: T, options: MemoryCacheEntryOptions?): T {
+    fun <T> set(key: String, value: T, options: MemoryCacheEntryOptions?): T {
         val entry = this.createEntry(key)
         if (options != null) {
             MemoryCacheEntryOptions.configureCacheEntry(entry, options)
@@ -117,13 +120,13 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         return value
     }
 
-    fun <T> set(key: Any, value: T, expirationToken: IChangeToken): T {
+    fun <T> set(key: String, value: T, expirationToken: IChangeToken): T {
         val options = MemoryCacheEntryOptions()
         options.expirationTokens.add(expirationToken)
-        return this.set<T>(key, value, options)
+        return this.set(key, value, options)
     }
 
-    fun <T> set(key: Any, value: T, absoluteExpirationUtc: LocalDateTime?): T {
+    fun <T> set(key: String, value: T, absoluteExpirationUtc: LocalDateTime?): T {
         var options: MemoryCacheEntryOptions? = null
         if (absoluteExpirationUtc != null) {
             options = MemoryCacheEntryOptions()
@@ -132,13 +135,13 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         return this.set(key, value, options)
     }
 
-    fun <T> set(key: Any, value: T, slidingExpirationMilliseconds: Long): T {
+    fun <T> set(key: String, value: T, slidingExpirationMilliseconds: Long): T {
         if (slidingExpirationMilliseconds <= 0) {
             throw CacheException("slidingExpirationMilliseconds must greater than 0")
         }
-        var options = MemoryCacheEntryOptions()
+        val options = MemoryCacheEntryOptions()
         options.slidingExpirationMilliseconds = slidingExpirationMilliseconds
-        return this.set<T>(key, value, options)
+        return this.set(key, value, options)
     }
 
     //添加一个缓存对象到HASH表（当GC回收时可以自动添加），用于防止对象被意外收集（由于JVM GC过程无法 Hook，暂时无效，或许可以使用 finalize？）
@@ -206,7 +209,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
         ) {
             this.lastExpirationScan = now
             val cache = this
-            MemoryCache.executionThreadPool.execute { scanForExpiredItems(cache) }
+            executionThreadPool.execute { scanForExpiredItems(cache) }
         }
     }
 
@@ -218,7 +221,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
 
     /// 在内存紧张时通过调用此方法来回收内存，但是内存真正回收时间取决于下一次的GC.
     /// 回收 10% 条目以压缩内存。
-    private fun doMemoryPreassureCollection(): Boolean {
+    private fun doMemoryPressureCollection(): Boolean {
         if (closed) {
             return false
         }
@@ -317,7 +320,7 @@ class MemoryCache(options: MemoryCacheOptions) : AutoCloseable {
          *
          * @return
          */
-        val executionThreadPool = Executors.newCachedThreadPool()!!
+        val executionThreadPool: ExecutorService = Executors.newCachedThreadPool()
 
         @JvmStatic
         private fun scanForExpiredItems(cache: MemoryCache) {

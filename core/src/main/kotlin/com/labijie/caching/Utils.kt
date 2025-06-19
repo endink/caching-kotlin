@@ -19,3 +19,13 @@ fun getGenericType(rowType: Type, vararg actualTypeArguments:Type): Parameterize
         }
     }
 }
+
+fun isNativeImage(): Boolean {
+    return try {
+        Class.forName("org.graalvm.nativeimage.ImageInfo")
+            .getMethod("inImageCode")
+            .invoke(null) as Boolean
+    } catch (ex: Throwable) {
+        false
+    }
+}

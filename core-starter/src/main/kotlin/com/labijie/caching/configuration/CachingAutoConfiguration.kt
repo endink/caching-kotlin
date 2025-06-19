@@ -8,16 +8,13 @@ import com.labijie.caching.aspect.CacheScopeAspect
 import com.labijie.caching.component.HashedWheelDelayTimer
 import com.labijie.caching.component.IDelayTimer
 import com.labijie.caching.component.ITransactionInjection
-import com.labijie.caching.component.JdbcTransactionInjection
 import com.labijie.caching.component.NoopTransactionInjection
 import com.labijie.caching.memory.MemoryCacheManager
 import com.labijie.caching.memory.MemoryCacheOptions
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.InitializingBean
-import org.springframework.boot.SpringBootConfiguration
 import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties

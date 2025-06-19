@@ -17,8 +17,21 @@ class NoopCacheManager private constructor() : ICacheManager {
 
     }
 
-    override fun remove(key: String, region: String?) {
+    override fun setMulti(
+        keyAndValues: Map<String, Any>,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?
+    ) {
 
+    }
+
+    override fun removeMulti(keys: Iterable<String>, region: String?): Int {
+        return 0
+    }
+
+    override fun remove(key: String, region: String?): Boolean {
+        return false
     }
 
     override fun refresh(key: String, region: String?): Boolean {
