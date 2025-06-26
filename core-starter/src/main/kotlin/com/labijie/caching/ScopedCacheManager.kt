@@ -3,6 +3,7 @@ package com.labijie.caching
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import java.lang.reflect.Type
+import kotlin.reflect.KType
 
 /**
  *
@@ -21,22 +22,32 @@ class ScopedCacheManager(private val cacheManager: ICacheManager): ICacheManager
         }
     }
 
-    override fun set(key: String, data: Any, expireMills: Long?, timePolicy: TimePolicy, region: String?) {
+    override fun set(
+        key: String,
+        data: Any,
+        kotlinType: KType?,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?,
+        serializer: String?
+    ) {
         if(cacheScopeHolder.cacheRequired(CacheOperation.Set)) {
-            return cacheManager.set(key, data, expireMills, timePolicy, region)
+            return cacheManager.set(key, data, kotlinType, expireMills, timePolicy, region, serializer)
         }
     }
 
     override fun setMulti(
-        keyAndValues: Map<String, Any>,
+        keyAndValues: Map<String, ICacheItem>,
         expireMills: Long?,
         timePolicy: TimePolicy,
-        region: String?
+        region: String?,
+        serializer: String?
     ) {
         if(cacheScopeHolder.cacheRequired(CacheOperation.Set)) {
             cacheManager.setMulti(keyAndValues, expireMills, timePolicy, region)
         }
     }
+
 
     override fun remove(key: String, region: String?): Boolean {
         return if(cacheScopeHolder.cacheRequired(CacheOperation.Remove)) {
@@ -70,6 +81,13 @@ class ScopedCacheManager(private val cacheManager: ICacheManager): ICacheManager
     }
 
     override fun get(key: String, valueType: Type, region: String?): Any? {
+        if(cacheScopeHolder.cacheRequired(CacheOperation.Get)) {
+            return this.cacheManager.get(key, valueType, region)
+        }
+        return null
+    }
+
+    override fun get(key: String, valueType: KType, region: String?): Any? {
         if(cacheScopeHolder.cacheRequired(CacheOperation.Get)) {
             return this.cacheManager.get(key, valueType, region)
         }

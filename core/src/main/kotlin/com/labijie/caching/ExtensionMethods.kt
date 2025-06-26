@@ -11,17 +11,49 @@ import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.time.Duration
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 
-private fun <T> Any?.cast(valueType: Type): T? {
-    if(this == null) return null
+fun <T> ICacheManager.get(key: String, valueType: TypeReference<T>, region: String? = null): Any? {
+    val type = valueType.type
+    return this.get(key, type, region)
+}
 
-    if (valueType is Class<*>) {
-        if (valueType.isInstance(this)) {
+fun <T : Any> ICacheManager.get(key: String, valueType: KClass<T>, region: String? = null): T? {
+    return this.get(key, valueType.java, region).cast(valueType.java)
+}
+
+inline fun <reified T : Any> ICacheManager.get(key: String, region: String? = null): T? {
+    return this.get(key, typeOf<T>(), region) as? T
+}
+
+inline fun <reified T : Any> ICacheManager.set(
+    key: String,
+    data: T,
+    expireMills: Long? = null,
+    timePolicy: TimePolicy = TimePolicy.Absolute,
+    region: String? = null,
+    serializer: String? = null
+) {
+    this.set(key, data, typeOf<T>(), expireMills, timePolicy, region, serializer)
+}
+
+
+private val cacheLogger by lazy {
+    LoggerFactory.getLogger(ICacheManager::class.java)
+}
+
+
+private fun <T> Any?.cast(javaType: Type?): T? {
+    if (this == null) return null
+
+    if (javaType is Class<*>) {
+        if (javaType.isInstance(this)) {
             @Suppress("UNCHECKED_CAST")
             return this as? T
-        }else {
-            LoggerFactory.getLogger(ICacheManager::class.java).warn("Invalid cache value type, excepted is ${valueType.name} but got others.")
+        } else {
+            cacheLogger.warn("Invalid cache value type, excepted is ${javaType.name} but got others.")
             return null
         }
     }
@@ -31,23 +63,10 @@ private fun <T> Any?.cast(valueType: Type): T? {
 }
 
 
-internal inline fun <reified T> Any?.cast(): T? {
-    return this.cast(T::class.java)
-}
-
-inline fun <reified T> typedSupplier(noinline block: (String) -> T): TypedCacheValueSupplier<T> {
-    val type = object : TypeReference<T>() {}.type
-    return object : TypedCacheValueSupplier<T> {
-        override val returnType: Type = type
-        override val supplier = block
-    }
-}
-
-
 /**
  * 如果缓存中存在指定键的缓存项则从缓存中获取该项，如果不存在，使用指定的工厂方法创建并加入到缓存。
  * @param key 要获取的缓存键。
- * @param valueType 要获取的缓存的值类型。
+ * @param javaType 要获取的缓存的值类型。
  * @param factory 当键不存在时用于创建对象的工厂方法。
  * @param expireMills 当发生添加缓存项时用于设置缓存项的过期时间。
  * @param region 要从中获取缓存的缓存区域。
@@ -57,27 +76,101 @@ inline fun <reified T> typedSupplier(noinline block: (String) -> T): TypedCacheV
  */
 private fun <T> ICacheManager.getOrSetInternal(
     key: String,
-    valueType: Type,
     factory: (key: String) -> T?,
+    javaType: Type,
     expireMills: Long? = null,
     timePolicy: TimePolicy = TimePolicy.Absolute,
     region: String? = null,
-    preventException: Boolean = true
+    preventException: Boolean = true,
+    serializer: String? = null,
 ): T? {
     var data = try {
-        get(key, valueType, region)
+        get(key, javaType, region)
     } catch (ex: CacheException) {
-        if (!preventException) {
+        if (!preventException || ex is CacheSerializationUnsupportedException) {
             throw ex
         } else {
-            LoggerFactory.getLogger(ICacheManager::class.java).error("Get cache data fault.", ex)
+            cacheLogger.error("Get cache data fault.", ex)
         }
+        null
     }
     if (data == null) {
         data = factory.invoke(key)
         if (data != null) {
             try {
-                set(key, data, expireMills, timePolicy, region)
+                set(key, data, expireMills, timePolicy, region, serializer)
+            } catch (ex: CacheException) {
+                if (!preventException) {
+                    throw ex
+                } else {
+                    cacheLogger.error("Set cache data fault.", ex)
+                }
+            }
+        }
+    }
+    return data.cast(javaType)
+}
+
+
+fun <T : Any> ICacheManager.getOrSet(
+    key: String,
+    region: String?,
+    valueType: Type,
+    expiration: Duration,
+    timePolicy: TimePolicy = TimePolicy.Absolute,
+    preventException: Boolean = true,
+    serializer: String? = null,
+    factory: (key: String) -> T?,
+): T? {
+    return getOrSetInternal(
+        key,
+        factory,
+        valueType,
+        expiration.toMillis(),
+        timePolicy,
+        region,
+        preventException,
+        serializer
+    )
+}
+
+fun <T : Any> ICacheManager.getOrSet(
+    key: String,
+    valueType: Type,
+    expiration: Duration,
+    timePolicy: TimePolicy = TimePolicy.Absolute,
+    preventException: Boolean = true,
+    serializer: String? = null,
+    factory: (key: String) -> T?,
+): T? {
+    return getOrSet(key, null, valueType, expiration, timePolicy, preventException, serializer, factory)
+}
+
+inline fun <reified T : Any> ICacheManager.getOrSet(
+    key: String,
+    region: String?,
+    expiration: Duration,
+    timePolicy: TimePolicy = TimePolicy.Absolute,
+    serializer: String? = null,
+    preventException: Boolean = true,
+    factory: (key: String) -> T?,
+): T? {
+
+    var data = try {
+        get(key, typeOf<T>(), region)
+    } catch (ex: CacheException) {
+        if (!preventException || ex is CacheSerializationUnsupportedException) {
+            throw ex
+        } else {
+            LoggerFactory.getLogger(ICacheManager::class.java).error("Get cache data fault.", ex)
+        }
+        null
+    }
+    if (data == null) {
+        data = factory.invoke(key)
+        if (data != null) {
+            try {
+                set(key, data, expiration.toMillis(), timePolicy, region, serializer)
             } catch (ex: CacheException) {
                 if (!preventException) {
                     throw ex
@@ -87,47 +180,29 @@ private fun <T> ICacheManager.getOrSetInternal(
             }
         }
     }
-    return data.cast(valueType)
+
+    return when {
+        data == null -> null
+        data is T -> data
+        else -> {
+            LoggerFactory.getLogger(ICacheManager::class.java)
+                .warn("Cast cache data failed: ${data::class} cannot be cast to ${T::class}")
+            null
+        }
+    }
 }
 
 
-
-fun <T : Any> ICacheManager.get(key: String, valueType: KClass<T>, region: String? = null): T? {
-    return this.get(key, valueType.java, region).cast(valueType.java)
-}
-
-inline fun <reified T : Any> ICacheManager.get(key: String, region: String? = null): T? {
-    val type = object : TypeReference<T>() {}.type
-    return this.get(key, type, region) as? T
-}
-
-
-fun <T : Any> ICacheManager.getOrSet(
+inline fun <reified T : Any> ICacheManager.getOrSet(
     key: String,
-    region: String?,
-    absoluteExpire: Duration,
-    valueType: Type,
-    factory: (key: String) -> T?
+    expiration: Duration,
+    timePolicy: TimePolicy = TimePolicy.Absolute,
+    serializer: String? = null,
+    preventException: Boolean = true,
+    factory: (key: String) -> T?,
 ): T? {
-
-    return this.getOrSetInternal(
-        key,
-        valueType,
-        factory,
-        absoluteExpire.toMillis(),
-        TimePolicy.Absolute,
-        region,
-        true
-    )
+    return getOrSet(key, null, expiration, timePolicy, serializer, preventException, factory)
 }
-
-fun <T : Any> ICacheManager.getOrSet(
-    key: String,
-    absoluteExpire: Duration,
-    valueType: Type,
-    factory: (key: String) -> T?
-) = this.getOrSet(key, null, absoluteExpire, valueType, factory)
-
 
 
 fun <T : Any> ICacheManager.getOrSetSliding(
@@ -135,62 +210,65 @@ fun <T : Any> ICacheManager.getOrSetSliding(
     region: String?,
     slidingExpire: Duration,
     valueType: Type,
+    serializer: String? = null,
+    preventException: Boolean = true,
     factory: (key: String) -> T?
 ): T? {
 
     return this.getOrSetInternal(
         key,
-        valueType,
         factory,
+        valueType,
         slidingExpire.toMillis(),
         TimePolicy.Sliding,
         region,
-        true
+        preventException,
+        serializer
     )
 }
 
-fun <T : Any> ICacheManager.getOrSetSliding(
+inline fun <reified T : Any> ICacheManager.getOrSetSliding(
     key: String,
     slidingExpire: Duration,
-    valueType: Type,
+    serializer: String? = null,
+    preventException: Boolean = true,
     factory: (key: String) -> T?
-) = this.getOrSetSliding(key, null, slidingExpire, valueType, factory)
+) = this.getOrSet(key, null, slidingExpire, TimePolicy.Sliding, serializer, preventException, factory)
 
 
-inline fun <reified T : Any> ICacheManager.getOrSet(
-    key: String,
-    region: String?,
-    absoluteExpire: Duration,
-    noinline factory: (String) -> T?,
-): T? {
-    val supplier = typedSupplier { key -> factory(key) }
-    return this.getOrSet(key, region, absoluteExpire, supplier.returnType, supplier.supplier)
-}
+//inline fun <reified T : Any> ICacheManager.getOrSet(
+//    key: String,
+//    region: String?,
+//    absoluteExpire: Duration,
+//    noinline factory: (String) -> T?,
+//): T? {
+//    return this.getOrSet(key, region, absoluteExpire, TimePolicy.Absolute supplier.returnType, supplier.supplier)
+//}
 
 
-inline fun <reified T : Any> ICacheManager.getOrSet(
-    key: String,
-    absoluteExpire: Duration,
-    noinline factory: (key: String) -> T?
-): T? {
-    val supplier = typedSupplier { key -> factory(key) }
-    return this.getOrSet(key, null, absoluteExpire, supplier.returnType, supplier.supplier)
-}
+//inline fun <reified T : Any> ICacheManager.getOrSet(
+//    key: String,
+//    absoluteExpire: Duration,
+//    noinline factory: (key: String) -> T?
+//): T? {
+//    val supplier = typedSupplier { key -> factory(key) }
+//    return this.getOrSet(key, null, absoluteExpire, supplier.returnType, supplier.supplier)
+//}
 
 
-inline fun <reified T : Any> ICacheManager.getOrSetSliding(
-    key: String,
-    region: String?,
-    slidingExpire: Duration,
-    noinline factory: (String) -> T?,
-): T? {
-    return this.getOrSetSliding(key, region, slidingExpire, T::class.java, factory)
-}
-
-inline fun <reified T : Any> ICacheManager.getOrSetSliding(
-    key: String,
-    slidingExpire: Duration,
-    noinline factory: (String) -> T?,
-): T? {
-    return this.getOrSetSliding(key, null, slidingExpire, T::class.java, factory)
-}
+//inline fun <reified T : Any> ICacheManager.getOrSetSliding(
+//    key: String,
+//    region: String?,
+//    slidingExpire: Duration,
+//    noinline factory: (String) -> T?,
+//): T? {
+//    return this.getOrSetSliding(key, region, slidingExpire, T::class.java, factory)
+//}
+//
+//inline fun <reified T : Any> ICacheManager.getOrSetSliding(
+//    key: String,
+//    slidingExpire: Duration,
+//    noinline factory: (String) -> T?,
+//): T? {
+//    return this.getOrSetSliding(key, null, slidingExpire, T::class.java, factory)
+//}

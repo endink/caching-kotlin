@@ -1,6 +1,7 @@
 package com.labijie.caching
 
 import java.lang.reflect.Type
+import kotlin.reflect.KType
 
 /**
  *
@@ -13,15 +14,24 @@ class NoopCacheManager private constructor() : ICacheManager {
         val INSTANCE: NoopCacheManager = NoopCacheManager()
     }
 
-    override fun set(key: String, data: Any, expireMills: Long?, timePolicy: TimePolicy, region: String?) {
+    override fun set(
+        key: String,
+        data: Any,
+        kotlinType: KType?,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?,
+        serializer: String?
+    ) {
 
     }
 
     override fun setMulti(
-        keyAndValues: Map<String, Any>,
+        keyAndValues: Map<String, ICacheItem>,
         expireMills: Long?,
         timePolicy: TimePolicy,
-        region: String?
+        region: String?,
+        serializer: String?
     ) {
 
     }
@@ -47,6 +57,10 @@ class NoopCacheManager private constructor() : ICacheManager {
     }
 
     override fun get(key: String, valueType: Type, region: String?): Any? {
+        return null
+    }
+
+    override fun get(key: String, valueType: KType, region: String?): Any? {
         return null
     }
 }

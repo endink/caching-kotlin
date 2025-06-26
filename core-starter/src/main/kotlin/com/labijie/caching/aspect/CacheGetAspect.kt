@@ -1,8 +1,8 @@
 package com.labijie.caching.aspect
 
 import com.labijie.caching.CacheException
-import com.labijie.caching.ICacheManager
 import com.labijie.caching.CacheOperation
+import com.labijie.caching.ICacheManager
 import com.labijie.caching.ICacheScopeHolder
 import com.labijie.caching.annotation.Cache
 import org.aspectj.lang.ProceedingJoinPoint
@@ -11,7 +11,7 @@ import org.aspectj.lang.annotation.Aspect
 import org.aspectj.lang.annotation.Pointcut
 import org.aspectj.lang.reflect.MethodSignature
 import org.slf4j.LoggerFactory
-import java.lang.reflect.Method
+import kotlin.reflect.jvm.kotlinFunction
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,7 +27,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
     }
 
     @Pointcut("@annotation(com.labijie.caching.annotation.Cache)")
-    private fun cacheMethod() {
+    fun cacheMethod() {
     }
 
     @Around("cacheMethod()")
@@ -37,6 +37,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
         val setUsed = (method.returnType != Void.TYPE) && cacheScopeHolder.cacheRequired(CacheOperation.Set)
 
         var keyAndRegion: Pair<String, String>? = null
+        val kotlinReturnType = method.kotlinFunction?.returnType
         val cacheAnnotation: Cache? = if (getUsed) method.getAnnotation(Cache::class.java) else null
         if (getUsed && cacheAnnotation != null) {
             try {
@@ -44,7 +45,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
 
                 val parameterizedType = method.genericReturnType
 
-                val value = this.cacheManager.get(keyAndRegion.first, parameterizedType, keyAndRegion.second)
+                val value = kotlinReturnType?.let { this.cacheManager.get(keyAndRegion.first, kotlinReturnType, keyAndRegion.second) } ?: this.cacheManager.get(keyAndRegion.first, parameterizedType, keyAndRegion.second)
                 if (value != null) {
                     if (method.returnType.isAssignableFrom(value::class.java)) {
                         if(!logger.isDebugEnabled){
@@ -72,6 +73,7 @@ class CacheGetAspect(private val cacheManager: ICacheManager, cacheScopeHolder: 
                     this.cacheManager.set(
                         keyAndRegion.first,
                         data = returnValue,
+                        kotlinReturnType,
                         expireMills = cacheAnnotation.expireMills,
                         timePolicy = cacheAnnotation.timePolicy,
                         region = keyAndRegion.second

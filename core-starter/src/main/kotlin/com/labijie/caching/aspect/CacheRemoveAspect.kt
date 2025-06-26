@@ -35,7 +35,7 @@ class CacheRemoveAspect(
     }
 
     @Pointcut("@annotation(com.labijie.caching.annotation.CacheRemove)")
-    private fun cacheRemoveMethod() {
+    fun cacheRemoveMethod() {
     }
 
     @Around("cacheRemoveMethod()")

@@ -16,6 +16,10 @@ object CacheDataSerializerRegistry {
     private val serializers: MutableMap<String, ICacheDataSerializer> = mutableMapOf()
     private val logger = LoggerFactory.getLogger(CacheDataSerializerRegistry::class.java)
 
+    fun clear() {
+        serializers.clear()
+    }
+
     fun getSerializer(name: String): ICacheDataSerializer {
         val serializerName = name.lowercase()
         return serializers.getOrPut(serializerName) {

@@ -17,7 +17,7 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 
 
-class JdbcTransactionInjection:ApplicationContextAware, ITransactionInjection {
+class JdbcTransactionInjection : ApplicationContextAware, ITransactionInjection {
 
     private lateinit var applicationContext: ApplicationContext
 
@@ -28,26 +28,26 @@ class JdbcTransactionInjection:ApplicationContextAware, ITransactionInjection {
     private val transactionManager by lazy {
         try {
             applicationContext.getBean(PlatformTransactionManager::class.java)
-        }catch (_: NoSuchBeanDefinitionException) {
+        } catch (_: NoSuchBeanDefinitionException) {
             null
         }
     }
 
     override fun hookTransaction(action: () -> Unit) {
-        if(isInTransaction) {
+        if (isInTransaction) {
             TransactionSynchronizationManager.registerSynchronization(object : TransactionSynchronization {
                 override fun afterCommit() {
                     action()
                 }
             })
-        }else {
+        } else {
             action()
         }
     }
 
     override val isInTransaction: Boolean
         get() {
-            if(this.transactionManager != null) {
+            if (this.transactionManager != null) {
                 val def = DefaultTransactionDefinition()
                 def.propagationBehavior = TransactionDefinition.PROPAGATION_MANDATORY
 
@@ -56,7 +56,7 @@ class JdbcTransactionInjection:ApplicationContextAware, ITransactionInjection {
                 } catch (_: IllegalTransactionStateException) {
                     false
                 }
-            }else{
+            } else {
                 return false
             }
         }

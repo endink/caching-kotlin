@@ -1,35 +1,23 @@
 package com.labijie.caching.redis.serialization
 
 import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.serializers.DefaultSerializers.*
 import com.fasterxml.jackson.databind.type.TypeFactory
 import com.labijie.caching.CacheException
-import com.labijie.caching.kryo.*
-import com.labijie.caching.kryo.DateSerializer
+import com.labijie.caching.kryo.IKryoSerializer
 import com.labijie.caching.kryo.KryoUtils.registerBaseTypes
-import com.labijie.caching.kryo.URISerializer
-import com.labijie.caching.kryo.UUIDSerializer
+import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import com.labijie.caching.redis.serialization.kryo.*
+import com.labijie.caching.redis.serialization.kryo.PooledKryo
 import java.lang.reflect.Type
-import java.math.BigDecimal
-import java.math.BigInteger
-import java.net.URI
-import java.net.URL
-import java.nio.charset.Charset
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDateTime
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentSkipListMap
+import kotlin.reflect.KType
 
 /**
  * Created with IntelliJ IDEA.
  * @author Anders Xiao
  * @date 2019-09-08
  */
-open class KryoCacheDataSerializer(private val kryoSerializer: IKryoSerializer?, val kryoOptions: KryoOptions) : ICacheDataSerializer {
+open class KryoCacheDataSerializer(private val kryoSerializer: IKryoSerializer?, val kryoOptions: KryoOptions) :
+    ICacheDataSerializer {
 
     companion object {
         const val NAME = "kryo"
@@ -78,22 +66,34 @@ open class KryoCacheDataSerializer(private val kryoSerializer: IKryoSerializer?,
     }
 
 
+
     open override fun deserializeData(type: Type, data: ByteArray): Any {
-        val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
-        val javaType = when (clazz) {
-            List::class.java -> ArrayList::class.java
-            Map::class.java -> HashMap::class.java
-            Set::class.java -> HashSet::class.java
-            Collection::class.java -> ArrayList::class.java
-            Iterable::class.java -> ArrayList::class.java
-            else -> clazz
+        try {
+
+            val clazz = TypeFactory.defaultInstance().constructType(type).rawClass
+            val javaType = when (clazz) {
+                List::class.java -> ArrayList::class.java
+                Map::class.java -> HashMap::class.java
+                Set::class.java -> HashSet::class.java
+                Collection::class.java -> ArrayList::class.java
+                Iterable::class.java -> ArrayList::class.java
+                else -> clazz
+            }
+            return kryo.deserialize(data, javaType)
+        } catch (e: Throwable) {
+            throw CacheDataSerializationException("Could not deserialize ( kryo ) data type: ${type.typeName}", e)
         }
-        return kryo.deserialize(data, javaType)
     }
 
-    open override fun serializeData(data: Any): ByteArray {
-        return kryo.serialize(data)
+
+    open override fun serializeData(data: Any, kotlinType: KType?): ByteArray {
+        try {
+            return kryo.serialize(data)
+        } catch (e: Throwable) {
+            throw CacheDataSerializationException("Could not serialize data ( kryo ): ${kotlinType?.classifier}", e)
+        }
     }
+
 
     override val name: String = NAME
 }

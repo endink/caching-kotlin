@@ -4,6 +4,7 @@ import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.getGenericType
 import com.labijie.caching.memory.MemoryCacheManager
+import com.labijie.caching.set
 import org.junit.jupiter.api.Assertions
 import kotlin.test.*
 import java.lang.reflect.InvocationTargetException

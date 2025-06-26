@@ -8,6 +8,8 @@ import com.labijie.caching.redis.CacheDataDeserializationException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import java.lang.reflect.Type
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 
 /**
  *
@@ -50,7 +52,7 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
         }
     }
 
-    override fun serializeData(data: Any): ByteArray {
+    override fun serializeData(data: Any, kotlinType: KType?): ByteArray {
         try {
             return smileMapper.writeValueAsBytes(data)
         } catch (ex: Throwable) {
@@ -59,4 +61,5 @@ class JsonSmileDataSerializer@JvmOverloads constructor(mapper: SmileMapper? = nu
         }
 
     }
+
 }

@@ -13,15 +13,19 @@ import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
 import com.labijie.caching.kryo.IKryoSerializer
+import com.labijie.caching.redis.serialization.KotlinJsonCacheDataSerializer
+import com.labijie.caching.redis.serialization.KotlinProtobufCacheDataSerializer
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
+import org.springframework.boot.autoconfigure.AutoConfigureOrder
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.Ordered
 
 /**
  * Created with IntelliJ IDEA.
@@ -31,6 +35,7 @@ import org.springframework.context.annotation.Configuration
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(CachingAutoConfiguration::class)
 @ConditionalOnMissingBean(ICacheManager::class)
+@AutoConfigureOrder(Ordered.LOWEST_PRECEDENCE)
 @ConditionalOnProperty(name = ["infra.caching.provider"], havingValue = "redis", matchIfMissing = true)
 class RedisCachingAutoConfiguration {
 
@@ -40,18 +45,44 @@ class RedisCachingAutoConfiguration {
         return RedisCacheConfig()
     }
 
-    @Bean
-    @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-    fun jacksonCacheDataSerializer(
-        @Autowired(required = false) objectMapper: ObjectMapper?,
-        customizers: ObjectProvider<IJacksonCacheDataSerializerCustomizer>
-    ): JacksonCacheDataSerializer {
-        val mapper = objectMapper ?: JacksonCacheDataSerializer.createObjectMapper()
-        customizers.orderedStream().forEach {
-            it.customize(mapper)
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["kotlinx.serialization.json.Json"])
+    protected class KotlinJsonCacheDataSerializerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        fun kotlinJsonCacheDataSerializer(): KotlinJsonCacheDataSerializer {
+            return KotlinJsonCacheDataSerializer()
         }
-        return JacksonCacheDataSerializer(objectMapper)
     }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["kotlinx.serialization.json.Json"])
+    protected class KotlinProtobufCacheDataSerializerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        fun kotlinProtobufCacheDataSerializer(): KotlinProtobufCacheDataSerializer {
+            return KotlinProtobufCacheDataSerializer()
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["com.fasterxml.jackson.databind.ObjectMapper"])
+    protected class JacksonCacheDataSerializerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        fun jacksonCacheDataSerializer(
+            @Autowired(required = false) objectMapper: ObjectMapper?,
+            customizers: ObjectProvider<IJacksonCacheDataSerializerCustomizer>
+        ): JacksonCacheDataSerializer {
+            val mapper = objectMapper ?: JacksonCacheDataSerializer.createObjectMapper()
+            customizers.orderedStream().forEach {
+                it.customize(mapper)
+            }
+            return JacksonCacheDataSerializer(objectMapper)
+        }
+    }
+
+
 
     @Configuration(proxyBeanMethods = false)
     @ConditionalOnClass(name = ["com.esotericsoftware.kryo.Kryo"])
@@ -70,17 +101,21 @@ class RedisCachingAutoConfiguration {
         }
     }
 
-    @Bean
-    @ConditionalOnMissingBean(JsonSmileDataSerializer::class)
-    fun jsonSmileDataSerializer(
-        @Autowired(required = false) mapper: SmileMapper?,
-        customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>
-    ): JsonSmileDataSerializer {
-        val smileMapper = mapper ?: JsonSmileDataSerializer.createObjectMapper()
-        customizers.orderedStream().forEach {
-            it.customize(smileMapper)
+    @Configuration(proxyBeanMethods = false)
+    @ConditionalOnClass(name = ["com.fasterxml.jackson.dataformat.smile.databind.SmileMapper"])
+    protected class JacksonSmileCacheDataSerializerAutoConfiguration {
+        @Bean
+        @ConditionalOnMissingBean(JsonSmileDataSerializer::class)
+        fun jsonSmileDataSerializer(
+            @Autowired(required = false) mapper: SmileMapper?,
+            customizers: ObjectProvider<IJsonSmileCacheDataSerializerCustomizer>
+        ): JsonSmileDataSerializer {
+            val smileMapper = mapper ?: JsonSmileDataSerializer.createObjectMapper()
+            customizers.orderedStream().forEach {
+                it.customize(smileMapper)
+            }
+            return JsonSmileDataSerializer(smileMapper)
         }
-        return JsonSmileDataSerializer(smileMapper)
     }
 
     @Bean

@@ -10,6 +10,8 @@ import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import java.io.IOException
 import java.lang.reflect.Type
+import kotlin.reflect.KType
+import kotlin.reflect.jvm.javaType
 
 /**
  * Created with IntelliJ IDEA.
@@ -55,7 +57,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         }
     }
 
-    override fun serializeData(data: Any): ByteArray {
+    override fun serializeData(data: Any, kotlinType: KType?): ByteArray {
         try {
             return jacksonMapper.writeValueAsBytes(data)
         } catch (ex: IOException) {
@@ -64,6 +66,7 @@ class JacksonCacheDataSerializer @JvmOverloads constructor(mapper: ObjectMapper?
         }
 
     }
+
 
 
 }

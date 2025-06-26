@@ -23,6 +23,12 @@
       "type": "java.lang.String",
       "defaultValue": "json",
       "description": "cache data serializer"
+    },
+    {
+      "name": "infra.caching.redis.regions.values.[].url",
+      "type": "java.lang.String",
+      "defaultValue": "redis://localhost:6379",
+      "description": "redis url for lettuce"
     }
   ],
   "hints": [
@@ -37,6 +43,12 @@
         },
         {
           "value": "json-smile"
+        },
+        {
+          "value": "kotlin-json"
+        },
+        {
+          "value": "kotlin-protobuf"
         }
       ],
       "providers": [
@@ -57,7 +69,7 @@
       "name": "infra.caching.redis.regions.values",
       "providers": [
         {
-          "name": "handle-as",
+          "name": "class-reference",
           "parameters": {
             "target": "com.labijie.caching.redis.configuration.RedisRegionOptions"
           }

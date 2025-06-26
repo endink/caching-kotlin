@@ -1,6 +1,8 @@
 package com.labijie.caching.redis
 
 import com.labijie.caching.CacheException
+import com.labijie.caching.CacheSerializationUnsupportedException
+import com.labijie.caching.ICacheItem
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.codec.KeyValueCodec
@@ -16,6 +18,7 @@ import io.lettuce.core.masterreplica.MasterReplica
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KType
 
 
 /**
@@ -79,7 +82,9 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         private const val NOT_PRESENT: Long = -1
 
         private val NEW_LINE = System.lineSeparator()
-        private val logger = LoggerFactory.getLogger(RedisCacheManager::class.java)!!
+        private val logger by lazy {
+            LoggerFactory.getLogger(RedisCacheManager::class.java)
+        }
         const val NULL_REGION_NAME = "--"
 
         private fun Long.toByteArray(): ByteArray {
@@ -123,7 +128,8 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
 
-    fun getClient(region: String? = null): RedisClientInternal {
+    fun getClient(region: String?, serializerName: String?): RedisClientInternal {
+
         if (region == NULL_REGION_NAME) {
             throw RedisCacheException("Cache region name can not be '--'.")
         }
@@ -138,7 +144,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                 ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
         }
         val r = name.ifBlank { NULL_REGION_NAME }
-        val serializer = config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME }
+        val serializer = if(serializerName.isNullOrBlank()) config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME } else serializerName
 
         var client: RedisClientInternal? = null
         val c = this.clients.getOrPut(r) {
@@ -189,7 +195,13 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    private fun deserializeData(serializerName: String, type: Type, data: ByteArray): Any? {
+    private fun deserializeData(serializerName: String, type: Type,  data: ByteArray): Any? {
+        val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
+        val data = ser.deserializeData(type, data)
+        return data
+    }
+
+    private fun deserializeData(serializerName: String, type: KType,  data: ByteArray): Any? {
         val ser = CacheDataSerializerRegistry.getSerializer(serializerName)
         return ser.deserializeData(type, data)
     }
@@ -285,16 +297,25 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    override fun setMulti(keyAndValues: Map<String, Any>, expireMills: Long?, timePolicy: TimePolicy, region: String?) {
+    override fun setMulti(
+        keyAndValues: Map<String, ICacheItem>,
+        expireMills: Long?,
+        timePolicy: TimePolicy,
+        region: String?,
+        serializer: String?
+    ) {
         val useSliding = timePolicy == TimePolicy.Sliding
-        setMultiCore(keyAndValues, region, expireMills, useSliding)
+        setMultiCore(keyAndValues, region, expireMills, useSliding, serializer)
     }
 
+
+
     private fun setMultiCore(
-        keyAndValues: Map<String, Any>,
+        keyAndValues: Map<String, ICacheItem>,
         region: String?,
         timeoutMills: Long?,
-        useSlidingExpiration: Boolean
+        useSlidingExpiration: Boolean,
+        serializer: String?
     ) {
         keyAndValues.keys.forEach { validateKey(it) }
         keyAndValues.values.forEach {
@@ -302,13 +323,9 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             if (data::class.java == Any::class.java) {
                 throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
             }
-
-            if (data::class.java == Any::class.java) {
-                throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
-            }
         }
 
-        val client = this.getClient(region)
+        val client = this.getClient(region,serializer)
         val creationTime = System.currentTimeMillis()
 
         val isCluster = client.connection is StatefulRedisClusterConnection<*, *>
@@ -331,7 +348,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
                     (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
                     (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
                     (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
-                    client.serializer.serializeData(value).toRedisValue(),
+                    client.serializer.serializeData(value.getData(), value.getKotlinType()).toRedisValue(),
                     client.serializer.name.toRedisValue()
                 )
             }.toTypedArray()
@@ -354,10 +371,12 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         key: String,
         region: String?,
         data: Any?,
+        kotlinType: KType?,
         timeoutMills: Long?,
-        useSlidingExpiration: Boolean
+        useSlidingExpiration: Boolean,
+        serializer: String?
     ) {
-        val client = this.getClient(region)
+        val client = this.getClient(region, serializer)
         if (data == null) {
             this.removeCore(client.connection, key, region)
             return
@@ -368,7 +387,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
             (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
             (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
-            client.serializer.serializeData(data).toRedisValue(),
+            client.serializer.serializeData(data, kotlinType).toRedisValue(),
             client.serializer.name.toRedisValue()
         )
 
@@ -387,20 +406,29 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
-    private fun getCore(key: String, region: String?, type: Type): Any? {
+
+    private fun getCore(key: String, region: String?, javaType: Type? = null, kotlinType: KType? = null): Any? {
         this.validateKey(key)
         try {
-            val client = this.getClient(region)
-            val cacheHashData = this.getAndRefresh(client.connection, key, true)
+            val client = this.getClient(region, null)
+            val cacheHashData = this.getAndRefresh(client.connection, key, getData = true)
             if (cacheHashData?.data != null) {
 
                 //考虑数据结构更新后缓存反序列化的问题。
                 return try {
-                    this.deserializeData(cacheHashData.serializer, type, cacheHashData.data!!)
-                } catch (ex: Throwable) {
-                    logger.warn("The specified type '$type' could not be deserialize from cached data, and the cache with key '$key' has been removed ( region: $region ).")
+                    if(kotlinType != null) {
+                        this.deserializeData(cacheHashData.serializer, kotlinType, cacheHashData.data!!)
+                    }
+                    else if (javaType != null) {
+                        this.deserializeData(cacheHashData.serializer, javaType, cacheHashData.data!!)
+                    } else {
+                        throw IllegalArgumentException("Java type and kotlin type should have at least one for cache data deserialization.")
+                    }
 
-                    if (ex is VirtualMachineError) {
+                } catch (ex: Throwable) {
+                    logger.error("The specified type '${kotlinType?.classifier?.javaClass ?: javaType}' could not be deserialize (${cacheHashData.serializer}) from cached data, and the cache with key '$key' has been removed ( region: $region ).")
+
+                    if (ex is VirtualMachineError || ex is IllegalArgumentException || ex is CacheSerializationUnsupportedException) {
                         throw ex
                     }
                     this.removeCore(client.connection, key, region)
@@ -416,26 +444,34 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     }
 
     override fun get(key: String, valueType: Type, region: String?): Any? {
-        return this.getCore(key, region, valueType)
+        return this.getCore(key, region, javaType = valueType)
+    }
+
+
+    override fun get(key: String, valueType: KType, region: String?): Any? {
+        return this.getCore(key, region, kotlinType = valueType)
     }
 
     override fun set(
         key: String,
         data: Any,
+        kotlinType: KType?,
         expireMills: Long?,
         timePolicy: TimePolicy,
-        region: String?
+        region: String?,
+        serializer: String?
     ) {
         validateKey(key)
         if (data::class.java == Any::class.java) {
             throw CacheException("Cache data can not be ${Any::class.java.simpleName} as set.")
         }
         try {
-            this.setCore(key, region, data, expireMills, timePolicy == TimePolicy.Sliding)
+            this.setCore(key, region, data, kotlinType, expireMills, timePolicy == TimePolicy.Sliding, serializer)
         } catch (ex: RedisException) {
             throw  ex.wrap("Set cache data fault ( key: $key, region: $region ).")
         }
     }
+
 
     private fun executeDeleteScript(isCluster: Boolean, connection: RedisCommands<String, RedisValue>, keys: Collection<String>): Long {
         return if(isCluster) {
@@ -458,7 +494,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         val validKeys = keys.filter { it.isNotBlank() }
         if (validKeys.isEmpty()) return 0
 
-        val client = this.getClient(region)
+        val client = this.getClient(region, null)
         val connection = client.connection.sync()
 
         val isCluster = connection is StatefulRedisClusterConnection<*, *>
@@ -493,7 +529,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     override fun remove(key: String, region: String?): Boolean {
         this.validateKey(key)
         try {
-            val client = this.getClient(region)
+            val client = this.getClient(region, null)
             val count = this.removeCore(client.connection, key, region)
             return count > 0
         } catch (ex: RedisException) {
@@ -504,7 +540,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     override fun refresh(key: String, region: String?): Boolean {
         this.validateKey(key)
         try {
-            val client = this.getClient(region)
+            val client = this.getClient(region, null)
             this.getAndRefresh(client.connection, key, false)
             return true
         } catch (ex: RedisException) {
@@ -514,7 +550,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
     override fun clearRegion(region: String) {
         try {
-            val client = this.getClient(region)
+            val client = this.getClient(region, null)
             client.connection.sync().flushdb()
         } catch (ex: RedisException) {
             throw ex.wrap("Clear cache region '$region' fault .")

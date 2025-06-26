@@ -1,6 +1,5 @@
 package com.labijie.caching.redis.configuration
 
-import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import java.time.Duration
 
 /**
@@ -9,7 +8,10 @@ import java.time.Duration
  * @date 2019-03-20
  */
 data class RedisRegionOptions(
-    var url: String = "",
+    /**
+     * redis://[password@]host[:port][/database]
+     */
+    var url: String = "redis://localhost:6379",
     var timeout: Duration = Duration.ofSeconds(10),
     var serializer: String = "",
     var password: String = ""

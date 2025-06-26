@@ -1,19 +1,16 @@
 package com.labijie.caching.redis.testing
 
-import com.fasterxml.jackson.core.type.TypeReference
 import com.labijie.caching.ICacheManager
-import com.labijie.caching.configuration.CachingAutoConfiguration
 import com.labijie.caching.get
-import com.labijie.caching.redis.get
+import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import com.labijie.caching.redis.testing.bean.SimpleTestingBean
 import com.labijie.caching.redis.testing.configuration.TestConfiguration
 import com.labijie.caching.redis.testing.model.ArgumentObject
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.ExtendWith
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.ContextConfiguration
-import org.springframework.test.context.junit.jupiter.SpringExtension
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
+import org.springframework.boot.test.context.SpringBootTest
 import kotlin.test.BeforeTest
 
 /**
@@ -22,11 +19,9 @@ import kotlin.test.BeforeTest
  * @date 2019-03-25
  */
 
-@ExtendWith(SpringExtension::class)
-//@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-//@DataJdbcTest
-@ContextConfiguration(classes = [TestConfiguration::class, CachingAutoConfiguration::class])
-abstract class CacheAnnotationTester {
+@EnableAutoConfiguration
+@SpringBootTest(classes = [TestConfiguration::class])
+class CacheAnnotationTester {
 
     @Autowired
     protected lateinit var simple: SimpleTestingBean
@@ -35,7 +30,7 @@ abstract class CacheAnnotationTester {
     @Autowired
     private lateinit var cacheManager:ICacheManager
 
-    protected abstract fun getSerializerName():String
+    protected fun getSerializerName():String = JacksonCacheDataSerializer.NAME
 
     @BeforeTest
     fun beforeTest() {
@@ -68,13 +63,15 @@ abstract class CacheAnnotationTester {
 
         simple.removeCachedMap()
 
-        val cached = cacheManager.get(SimpleTestingBean.MAP_CACHE_KEY, object:TypeReference<Map<String, ArgumentObject>>() {})
+        //val cached = cacheManager.get(SimpleTestingBean.MAP_CACHE_KEY, object:TypeReference<Map<String, ArgumentObject>>() {})
+        val cached = cacheManager.get<Map<String, ArgumentObject>>(SimpleTestingBean.MAP_CACHE_KEY)
 
         Assertions.assertNull(cached)
     }
 
     @Test
     fun listCacheTest(){
+
         val list = simple.getCachedList()
 
         val list2 = simple.getCachedList()

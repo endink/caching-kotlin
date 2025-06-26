@@ -1,7 +1,11 @@
 package com.labijie.caching.redis.testing.configuration
 
 import com.labijie.caching.ICacheManager
+import com.labijie.caching.configuration.CachingAutoConfiguration
+import com.labijie.caching.redis.configuration.RedisCachingAutoConfiguration
+import com.labijie.caching.redis.testing.CacheAnnotationTester
 import com.labijie.caching.redis.testing.bean.SimpleTestingBean
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.EnableAspectJAutoProxy

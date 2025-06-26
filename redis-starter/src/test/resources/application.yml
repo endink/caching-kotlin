@@ -1,0 +1,7 @@
+infra:
+  caching:
+    provider: redis
+    redis:
+      regions:
+        default:
+          url: redis://localhost:6379

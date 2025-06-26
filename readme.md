@@ -58,10 +58,10 @@ use
 val memoryCache = MemoryCacheManager(MemoryCacheOptions())
 
 //sliding time expires
-memoryCache.set("2", Any(), 3000L, TimePolicy.Sliding)
+memoryCache.set("2", User(), 3000L, TimePolicy.Sliding)
 
 //absolute time expires
-memoryCache.set("a", Any(), 1000L, TimePolicy.Absolute)
+memoryCache.set("a", User(), 1000L, TimePolicy.Absolute)
 
 //get
 memoryCache.get("a")
@@ -235,9 +235,18 @@ Jackson is used as a serializer by default in the redis implementation, so the o
 ---
 There are 3 built-in serializers, here is their configuration names you can use:
 
-- **json-smile** (for json smile binary serializer)   
-- **json** (for json text serializer)   
-- **kryo** (for kryo binary serializer)   
+- `json-smile`: Json smile binary serializer
+- `json`: Jackson string serializer  
+- `kryo`: Kryo binary serializer
+- `kotlin-json`: Kotlin serializer with json format.( You can find details from [here](https://kotlinlang.org/docs/serialization.html) )
+- `kotlin-protobuf`: Kotlin serializer with protobuf format.( You can find details from [here](https://kotlinlang.org/docs/serialization.html) )
+
+> **Wanring**
+> 
+> Kotlin serialization has the best support for `GraalVM`. 
+> Because it replaces runtime reflection by generating code at compile time.
+> 
+> But, it only supports kotlin types, and you must provide `KType` in the get/set function or use the inline reified generic parameter, otherwise an error will occur.
 
 For spring project, every serializer include an customize interface for configure. Looks like *IXXXXCacheDataSerializerCustomizer*:
 - IJacksonCacheDataSerializerCustomizer
@@ -250,12 +259,18 @@ Caching-kotlin also provide the ability to create serializer by yourself:
 @Component
 class MySerializer : ICacheDataSerializer {
     override val name: String = "my-serializer"
+
     
-    override fun serializeData(data: Any): ByteArray {
+    fun serializeData(data: Any, kotlinType: KType?): ByteArray {
         //...
     }
 
-    override fun <T : Any> deserializeData(type: KClass<T>, data: ByteArray): T? {
+    fun deserializeData(type: Type, data: ByteArray): Any? {
+        //...
+    }
+
+    //This is optional, KType can avoid type erasure, and it is recommended that you implement it
+    fun deserializeData(type: KType, data: ByteArray): Any? {
         //...
     }
 }
@@ -279,6 +294,17 @@ infra:
           serializer: my-serializer
 
 ```
-## Compile Requirements
 
-Gradle Version >= 6
+## Avoid Java Type Erasure
+
+Java's type erasure is challenging, and the traditional way to got `ParameterizedType` from an object like `"TypeRefrence"`.
+
+```kotlin
+cacheManager.get("key", object:TypeReference<Map<String, Int>>() {})
+```
+In Caching Kotlin, I recommend kotlin's `KType` to void type erasure, because KType has generic parameter information in it.
+
+```kotlin
+cacheManager.get<Map<String, Int>>("key")
+```
+

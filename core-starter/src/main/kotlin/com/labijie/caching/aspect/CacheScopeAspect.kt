@@ -23,7 +23,7 @@ class CacheScopeAspect(private val cacheScopeHolder: ICacheScopeHolder) : Ordere
 
 
     @Pointcut("@annotation(com.labijie.caching.annotation.SuppressCache)")
-    private fun cacheScopeMethod(){}
+    fun cacheScopeMethod(){}
 
     @Around("cacheScopeMethod()")
     fun aroundScope(joinPoint: ProceedingJoinPoint): Any? {

@@ -14,6 +14,7 @@ import io.lettuce.core.RedisException
 import java.lang.reflect.Type
 import java.util.function.Function
 import kotlin.reflect.KClass
+import kotlin.reflect.typeOf
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,11 +27,4 @@ fun RedisException.wrap(error: String): CacheException {
         else -> CacheException(error, ex)
     }
 }
-
-
-fun ICacheManager.get(key: String, valueType: TypeReference<*>, region: String? = null): Any? {
-    val type = valueType.type
-    return this.get(key, type, region)
-}
-
 

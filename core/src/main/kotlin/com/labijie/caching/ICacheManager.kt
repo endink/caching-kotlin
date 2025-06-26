@@ -6,6 +6,7 @@
 package com.labijie.caching
 
 import java.lang.reflect.Type
+import kotlin.reflect.KType
 
 
 /**
@@ -25,9 +26,11 @@ interface ICacheManager {
     fun set(
         key: String,
         data: Any,
+        kotlinType: KType?,
         expireMills: Long? = null,
         timePolicy: TimePolicy = TimePolicy.Absolute,
-        region: String? = null
+        region: String? = null,
+        serializer: String? = null,
     )
 
     /**
@@ -42,10 +45,11 @@ interface ICacheManager {
      */
     @Throws(CacheException::class)
     fun setMulti(
-        keyAndValues: Map<String, Any>,
+        keyAndValues: Map<String, ICacheItem>,
         expireMills: Long? = null,
         timePolicy: TimePolicy = TimePolicy.Absolute,
-        region: String? = null
+        region: String? = null,
+        serializer: String? = null,
     )
 
     /**
@@ -100,4 +104,15 @@ interface ICacheManager {
      */
     @Throws(CacheException::class)
     fun get(key: String, valueType: Type, region: String? = null): Any?
+
+
+    /**
+     * Retrieves a cached object by key.
+     * @param key The cache key.
+     * @param region Logical cache region (can be null or empty).
+     * @param valueType The expected type of the cached value.
+     * @return The cached object, or null if the key is not found.
+     */
+    @Throws(CacheException::class)
+    fun get(key: String, valueType: KType, region: String? = null): Any?
 }

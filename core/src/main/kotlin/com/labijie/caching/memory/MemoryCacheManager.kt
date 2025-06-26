@@ -4,6 +4,7 @@ import com.labijie.caching.*
 import java.lang.reflect.Type
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.reflect.KType
 
 /**
  * Created with IntelliJ IDEA.
@@ -66,6 +67,10 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         return getCore(key, region)
     }
 
+    override fun get(key: String, valueType: KType, region: String?): Any? {
+        return getCore(key, region)
+    }
+
     private fun getCore(key: String,region: String?): Any? {
         this.validateRegion(region)
 
@@ -78,9 +83,11 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     override fun set(
         key: String,
         data: Any,
+        kotlinType: KType?,
         expireMills: Long?,
         timePolicy: TimePolicy,
-        region: String?
+        region: String?,
+        serializer: String?
     ) {
         this.validateRegion(region)
 
@@ -99,13 +106,14 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
     }
 
     override fun setMulti(
-        keyAndValues: Map<String, Any>,
+        keyAndValues: Map<String, ICacheItem>,
         expireMills: Long?,
         timePolicy: TimePolicy,
-        region: String?
+        region: String?,
+        serializer: String?
     ) {
         keyAndValues.forEach { (key, value) ->
-            set(key, value, expireMills, timePolicy, region)
+            set(key, value.getData(), value.getKotlinType(), expireMills, timePolicy, region, serializer)
         }
     }
 
