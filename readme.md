@@ -14,7 +14,7 @@ All of the jar packages has been uploaded to the maven central.
 ## What News in 1.5.x
 
 - :smile: Kotlin (json/protobuf) serialization support added for redis 
-- :smile: Graalvm support added 
+- :smile: GraalVM support added 
 - :smile: Redis atomic operations: set/remove multi key/values
 
 just configure this:
@@ -31,10 +31,7 @@ infra:
       default-serializer: json
 ```
 
-## Kryo serialization saves 80% memory than spring redis template (jdk serialization) !! 
-
-
-
+> Kryo serializer is hard to support `GraalVM`, recommended to use a kotlin protobuf serializer instead of it.
 
 ## add depenedency in gradle project 
 
