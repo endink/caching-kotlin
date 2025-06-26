@@ -11,27 +11,29 @@ A cache structure that supports expiration on each key.
 
 All of the jar packages has been uploaded to the maven central.
 
-[//]: # (### 1.3.x Break Changes)
+## What News in 1.5.x
 
-[//]: # ()
-[//]: # (>Since version 1.3, we use json-smile as the redis default serialization provider.)
-
-[//]: # (So, if you want to change back to the default jackson serialization in your spring project, )
-
-[//]: # (you need to **explicitly** add the configuration: )
-
-[//]: # (> )
-
-[//]: # (>**infra.caching.redis.default-serializer=json**)
-
-
-:smile: **Now, kryo serializer was fully supported for redis ( since 1.0.7 ) !!**
-
-## Kryo serialization saves 80% memory than spring redis template (jdk serialization) !! 
+- :smile: Kotlin (json/protobuf) serialization support added for redis 
+- :smile: Graalvm support added 
+- :smile: Redis atomic operations: set/remove multi key/values
 
 just configure this:
 
->infra.caching.redis.default-serializer: kryo
+```yml
+infra:
+  caching:
+    provider: redis
+    redis:
+      regions:
+        default:
+          url: redis://localhost:6379
+          serializer: kotlin-json
+      default-serializer: json
+```
+
+## Kryo serialization saves 80% memory than spring redis template (jdk serialization) !! 
+
+
 
 
 ## add depenedency in gradle project 
@@ -293,6 +295,35 @@ infra:
           url: redis://localhost:6379
           serializer: my-serializer
 
+```
+
+#### Redis Atomic Operations
+
+**Atomic Set**
+
+```kotlin
+
+val testValues = mapOf(
+    "key-1" to ICacheItem.of(newData()),
+    "key-2" to ICacheItem.of(newData()),
+    "key-3" to ICacheItem.of(newData())
+)
+
+// For redis, LUA is used to implement atomic operations, after executed, all set or fail.
+redisCache.setMulti(
+    keyAndValues = testValues,
+    expireMills = 2000L,
+    timePolicy = TimePolicy.Absolute,
+    region = "region1"
+)
+
+```
+
+**Atomic Remove**
+
+```kotlin
+val removeKeys  = setOf("key-1", "key-2", "key-3")
+val count = redisCache.removeMulti(removeKeys, "region1")
 ```
 
 ## Avoid Java Type Erasure
