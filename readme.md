@@ -17,6 +17,7 @@ All of the jar packages has been uploaded to the maven central.
 - :smile: GraalVM support added.
 - :smile: Redis atomic operations: set/remove multi key/values.
 - :smile: A serializer parameter added to the `set`/`getOrSet` method, you can set a different serializer on each key.
+- :smile: Compile with springboot **3.5**, JDK **21**.
 
 just configure this:
 
