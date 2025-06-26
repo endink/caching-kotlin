@@ -13,9 +13,10 @@ All of the jar packages has been uploaded to the maven central.
 
 ## What News in 1.5.x
 
-- :smile: Kotlin (json/protobuf) serialization support added for redis 
-- :smile: GraalVM support added 
-- :smile: Redis atomic operations: set/remove multi key/values
+- :smile: Kotlin (json/protobuf) serialization support added for redis.
+- :smile: GraalVM support added.
+- :smile: Redis atomic operations: set/remove multi key/values.
+- :smile: A serializer parameter added to the `set`/`getOrSet` method, you can set a different serializer on each key.
 
 just configure this:
 
