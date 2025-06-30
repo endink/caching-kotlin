@@ -1,7 +1,9 @@
 package com.labijie.caching.redis.serialization
 
 import com.labijie.caching.CacheSerializationUnsupportedException
+import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
+import com.labijie.caching.redis.customization.IKotlinProtobufSerializationCustomizer
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
@@ -13,7 +15,12 @@ import kotlin.reflect.KType
  * @author Anders Xiao
  * @date 2025/6/24
  */
-class KotlinProtobufCacheDataSerializer : ICacheDataSerializer {
+
+@OptIn(ExperimentalSerializationApi::class)
+class KotlinProtobufCacheDataSerializer
+@JvmOverloads
+constructor(private val customizers: Iterable<IKotlinProtobufSerializationCustomizer> = emptyList()) :
+    ICacheDataSerializer {
     companion object {
         const val NAME = "kotlin-protobuf"
     }
@@ -21,18 +28,33 @@ class KotlinProtobufCacheDataSerializer : ICacheDataSerializer {
     override val name: String
         get() = NAME
 
+    private val protobuf by lazy {
+        ProtoBuf {
+            customizers.forEach {
+                it.customize(this)
+            }
+        }
+    }
+
     override fun deserializeData(type: Type, data: ByteArray): Any? {
         throw CacheSerializationUnsupportedException("KotlinProtobufCacheDataSerializer only support set data with KType.")
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override fun serializeData(data: Any, kotlinType: KType?): ByteArray {
-        val type = kotlinType ?: throw CacheSerializationUnsupportedException("KotlinProtobufCacheDataSerializer only support set data with KType.")
-        return ProtoBuf.encodeToByteArray(serializer(type), data)
+        val type = kotlinType
+            ?: throw CacheSerializationUnsupportedException("KotlinProtobufCacheDataSerializer only support set data with KType.")
+        try {
+            return protobuf.encodeToByteArray(serializer(type), data)
+        } catch (e: Throwable) {
+            throw CacheDataSerializationException("Could not serialize data (kotlin protobuf serializer)", e)
+        }
     }
 
-    @OptIn(ExperimentalSerializationApi::class)
     override fun deserializeData(type: KType, data: ByteArray): Any? {
-        return ProtoBuf.decodeFromByteArray(serializer(type), data)
+        try {
+            return protobuf.decodeFromByteArray(serializer(type), data)
+        } catch (e: Throwable) {
+            throw CacheDataSerializationException("Could not deserialize data (kotlin protobuf serializer)", e)
+        }
     }
 }

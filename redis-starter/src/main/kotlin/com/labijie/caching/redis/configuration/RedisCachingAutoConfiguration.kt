@@ -13,6 +13,8 @@ import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
 import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
 import com.labijie.caching.redis.serialization.KryoOptions
 import com.labijie.caching.kryo.IKryoSerializer
+import com.labijie.caching.redis.customization.IKotlinJsonSerializationCustomizer
+import com.labijie.caching.redis.customization.IKotlinProtobufSerializationCustomizer
 import com.labijie.caching.redis.serialization.KotlinJsonCacheDataSerializer
 import com.labijie.caching.redis.serialization.KotlinProtobufCacheDataSerializer
 import org.springframework.beans.factory.ObjectProvider
@@ -50,8 +52,8 @@ class RedisCachingAutoConfiguration {
     protected class KotlinJsonCacheDataSerializerAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-        fun kotlinJsonCacheDataSerializer(): KotlinJsonCacheDataSerializer {
-            return KotlinJsonCacheDataSerializer()
+        fun kotlinJsonCacheDataSerializer(customizers: ObjectProvider<IKotlinJsonSerializationCustomizer>): KotlinJsonCacheDataSerializer {
+            return KotlinJsonCacheDataSerializer(customizers.orderedStream().toList())
         }
     }
 
@@ -60,8 +62,8 @@ class RedisCachingAutoConfiguration {
     protected class KotlinProtobufCacheDataSerializerAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-        fun kotlinProtobufCacheDataSerializer(): KotlinProtobufCacheDataSerializer {
-            return KotlinProtobufCacheDataSerializer()
+        fun kotlinProtobufCacheDataSerializer(customizers: ObjectProvider<IKotlinProtobufSerializationCustomizer>): KotlinProtobufCacheDataSerializer {
+            return KotlinProtobufCacheDataSerializer(customizers)
         }
     }
 
