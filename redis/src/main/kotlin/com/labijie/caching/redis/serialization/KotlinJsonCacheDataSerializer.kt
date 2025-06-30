@@ -4,10 +4,12 @@ import com.labijie.caching.CacheSerializationUnsupportedException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import java.lang.reflect.Type
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 /**
@@ -15,9 +17,23 @@ import kotlin.reflect.KType
  * @author Anders Xiao
  * @date 2025/6/24
  */
-class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomizer> = emptyList()) : ICacheDataSerializer {
+class KotlinJsonCacheDataSerializer @JvmOverloads constructor(customizers: Iterable<IKotlinCacheDataSerializerCustomizer> = emptyList()) : ICacheDataSerializer {
     companion object {
         const val NAME = "kotlin-json"
+    }
+
+    private val wellKnownTypes: Map<KType, KSerializer<Any?>>
+
+    init {
+
+        val maps = mutableMapOf<KType, KSerializer<Any?>>()
+        customizers.forEach {
+            it.customSerializers().forEach {
+                    kv->
+                maps[kv.key] = kv.value
+            }
+        }
+        wellKnownTypes = maps
     }
 
     override val name: String
@@ -27,12 +43,16 @@ class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val custom
         throw CacheSerializationUnsupportedException("KotlinJsonCacheDataSerializer only support set data with KType.")
     }
 
+
     private val json by lazy {
         Json {
-            if(customizers.any()) {
+            if(wellKnownTypes.isNotEmpty()) {
                 this.serializersModule = SerializersModule {
-                    customizers.forEach {
-                        it.customize(this)
+                    wellKnownTypes.forEach { type ->
+                        @Suppress("UNCHECKED_CAST")
+                        (type.key.classifier as? KClass<*>)?.let {
+                            contextual(it as KClass<Any>, type.value as KSerializer<Any>)
+                        }
                     }
                 }
             }
@@ -42,7 +62,8 @@ class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val custom
     override fun serializeData(data: Any, kotlinType: KType?): ByteArray {
         val type = kotlinType ?: throw CacheSerializationUnsupportedException("KotlinJsonCacheDataSerializer only support set data with KType.")
         try {
-            return json.encodeToString(serializer(type), data).toByteArray(Charsets.UTF_8)
+            val ser = wellKnownTypes[type] ?: serializer(type)
+            return json.encodeToString(ser, data).toByteArray(Charsets.UTF_8)
         }catch (e: Throwable) {
             throw CacheDataSerializationException("Could not serialize data (kotlin json serializer)", e)
         }
@@ -50,7 +71,8 @@ class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val custom
 
     override fun deserializeData(type: KType, data: ByteArray): Any? {
         try {
-            return json.decodeFromString(serializer(type), data.toString(Charsets.UTF_8))
+            val ser = wellKnownTypes[type] ?: serializer(type)
+            return json.decodeFromString(ser, data.toString(Charsets.UTF_8))
         }catch (e: Throwable) {
             throw CacheDataSerializationException("Could not deserialize data (kryo serializer)", e)
         }

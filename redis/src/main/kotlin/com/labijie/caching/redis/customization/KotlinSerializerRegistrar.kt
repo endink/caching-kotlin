@@ -1,7 +1,6 @@
 package com.labijie.caching.redis.customization
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.modules.SerializersModuleBuilder
 import kotlin.reflect.KType
 
 /**
@@ -9,7 +8,4 @@ import kotlin.reflect.KType
  * @author Anders Xiao
  * @date 2025/6/30
  */
-@JvmDefaultWithCompatibility
-interface IKotlinCacheDataSerializerCustomizer {
-    fun customSerializers(): Map<KType, KSerializer<Any?>>
-}
+data class KotlinSerializerRegistrar(val type: KType, val serializer: KSerializer<*>)

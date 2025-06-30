@@ -11,6 +11,7 @@ import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.RedisCacheManager
 import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
 import com.labijie.caching.redis.serialization.*
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
@@ -35,6 +36,12 @@ import org.springframework.core.Ordered
 @ConditionalOnProperty(name = ["infra.caching.provider"], havingValue = "redis", matchIfMissing = true)
 class RedisCachingAutoConfiguration {
 
+    companion object {
+        private val logger by lazy {
+            LoggerFactory.getLogger(RedisCachingAutoConfiguration::class.java)
+        }
+    }
+
     @Bean
     @ConfigurationProperties("infra.caching.redis")
     fun redisCacheConfig(): RedisCacheConfig {
@@ -45,17 +52,17 @@ class RedisCachingAutoConfiguration {
     @ConditionalOnClass(name = ["kotlinx.serialization.json.Json"])
     protected class KotlinJsonCacheDataSerializerAutoConfiguration {
         @Bean
-        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        @ConditionalOnMissingBean
         fun kotlinJsonCacheDataSerializer(customizers: ObjectProvider<IKotlinCacheDataSerializerCustomizer>): KotlinJsonCacheDataSerializer {
             return KotlinJsonCacheDataSerializer(customizers.orderedStream().toList())
         }
     }
 
     @Configuration(proxyBeanMethods = false)
-    @ConditionalOnClass(name = ["kotlinx.serialization.json.Json"])
+    @ConditionalOnClass(name = ["kotlinx.serialization.protobuf.ProtoBuf"])
     protected class KotlinProtobufCacheDataSerializerAutoConfiguration {
         @Bean
-        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        @ConditionalOnMissingBean
         fun kotlinProtobufCacheDataSerializer(customizers: ObjectProvider<IKotlinCacheDataSerializerCustomizer>): KotlinProtobufCacheDataSerializer {
             return KotlinProtobufCacheDataSerializer(customizers)
         }
@@ -65,7 +72,7 @@ class RedisCachingAutoConfiguration {
     @ConditionalOnClass(name = ["com.fasterxml.jackson.databind.ObjectMapper"])
     protected class JacksonCacheDataSerializerAutoConfiguration {
         @Bean
-        @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
+        @ConditionalOnMissingBean
         fun jacksonCacheDataSerializer(
             @Autowired(required = false) objectMapper: ObjectMapper?,
             customizers: ObjectProvider<IJacksonCacheDataSerializerCustomizer>
@@ -84,7 +91,7 @@ class RedisCachingAutoConfiguration {
     @ConditionalOnClass(name = ["com.esotericsoftware.kryo.Kryo"])
     protected class KryoCachingSerializerAutoConfiguration {
         @Bean
-        @ConditionalOnMissingBean(KryoCacheDataSerializer::class)
+        @ConditionalOnMissingBean
         fun kryoCacheDataSerializer(
             @Autowired(required = false) kryoSerializer: IKryoSerializer?,
             customizers: ObjectProvider<IKryoCacheDataSerializerCustomizer>
@@ -120,9 +127,12 @@ class RedisCachingAutoConfiguration {
         config: RedisCacheConfig,
 
         ): ScopedCacheManager {
+        val sb = StringBuilder().appendLine("The following serialization providers are applied to caching kotlin:")
         serializers.orderedStream().forEach {
+            sb.appendLine(" ${it.name}: ${it::class.java}")
             CacheDataSerializerRegistry.registerSerializer(it)
         }
+        logger.info(sb.toString())
         val innerCache = RedisCacheManager(config)
         return ScopedCacheManager(innerCache)
     }

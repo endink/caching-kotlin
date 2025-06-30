@@ -5,10 +5,13 @@ import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
 import java.lang.reflect.Type
+import kotlin.reflect.KClass
 import kotlin.reflect.KType
 
 /**
@@ -29,16 +32,32 @@ constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomiz
     override val name: String
         get() = NAME
 
+    private val wellKnownTypes: Map<KType, KSerializer<Any?>>
+
+    init {
+
+        val maps = mutableMapOf<KType, KSerializer<Any?>>()
+        customizers.forEach {
+            it.customSerializers().forEach {
+                    kv->
+                maps[kv.key] = kv.value
+            }
+        }
+        wellKnownTypes = maps
+    }
+
     private val protobuf by lazy {
         ProtoBuf {
-            if (customizers.any()) {
+            if(wellKnownTypes.isNotEmpty()) {
                 this.serializersModule = SerializersModule {
-                    customizers.forEach {
-                        it.customize(this)
+                    wellKnownTypes.forEach { type ->
+                        @Suppress("UNCHECKED_CAST")
+                        (type.key.classifier as? KClass<*>)?.let {
+                            contextual(it as KClass<Any>, type.value as KSerializer<Any>)
+                        }
                     }
                 }
             }
-
         }
     }
 
@@ -50,7 +69,8 @@ constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomiz
         val type = kotlinType
             ?: throw CacheSerializationUnsupportedException("KotlinProtobufCacheDataSerializer only support set data with KType.")
         try {
-            return protobuf.encodeToByteArray(serializer(type), data)
+            val ser = wellKnownTypes[type] ?: serializer(type)
+            return protobuf.encodeToByteArray(ser, data)
         } catch (e: Throwable) {
             throw CacheDataSerializationException("Could not serialize data (kotlin protobuf serializer)", e)
         }
@@ -58,7 +78,8 @@ constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomiz
 
     override fun deserializeData(type: KType, data: ByteArray): Any? {
         try {
-            return protobuf.decodeFromByteArray(serializer(type), data)
+            val ser = wellKnownTypes[type] ?: serializer(type)
+            return protobuf.decodeFromByteArray(ser, data)
         } catch (e: Throwable) {
             throw CacheDataSerializationException("Could not deserialize data (kotlin protobuf serializer)", e)
         }
