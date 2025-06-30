@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
 import java.time.Duration
 import kotlin.reflect.KClass
-import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 
@@ -122,6 +121,7 @@ fun <T : Any> ICacheManager.getOrSet(
     serializer: String? = null,
     factory: (key: String) -> T?,
 ): T? {
+
     return getOrSetInternal(
         key,
         factory,
@@ -133,6 +133,7 @@ fun <T : Any> ICacheManager.getOrSet(
         serializer
     )
 }
+
 
 fun <T : Any> ICacheManager.getOrSet(
     key: String,
@@ -181,9 +182,9 @@ inline fun <reified T : Any> ICacheManager.getOrSet(
         }
     }
 
-    return when {
-        data == null -> null
-        data is T -> data
+    return when (data) {
+        null -> null
+        is T -> data
         else -> {
             LoggerFactory.getLogger(ICacheManager::class.java)
                 .warn("Cast cache data failed: ${data::class} cannot be cast to ${T::class}")
@@ -208,8 +209,8 @@ inline fun <reified T : Any> ICacheManager.getOrSet(
 fun <T : Any> ICacheManager.getOrSetSliding(
     key: String,
     region: String?,
-    slidingExpire: Duration,
     valueType: Type,
+    slidingExpire: Duration,
     serializer: String? = null,
     preventException: Boolean = true,
     factory: (key: String) -> T?
@@ -229,46 +230,18 @@ fun <T : Any> ICacheManager.getOrSetSliding(
 
 inline fun <reified T : Any> ICacheManager.getOrSetSliding(
     key: String,
+    region: String?,
     slidingExpire: Duration,
     serializer: String? = null,
     preventException: Boolean = true,
     factory: (key: String) -> T?
-) = this.getOrSet(key, null, slidingExpire, TimePolicy.Sliding, serializer, preventException, factory)
+) = this.getOrSet(key, region, slidingExpire, TimePolicy.Sliding, serializer, preventException, factory)
 
+inline fun <reified T : Any> ICacheManager.getOrSetSliding(
+    key: String,
+    slidingExpire: Duration,
+    serializer: String? = null,
+    preventException: Boolean = true,
+    factory: (key: String) -> T?
+) = this.getOrSetSliding(key, null, slidingExpire, serializer, preventException, factory)
 
-//inline fun <reified T : Any> ICacheManager.getOrSet(
-//    key: String,
-//    region: String?,
-//    absoluteExpire: Duration,
-//    noinline factory: (String) -> T?,
-//): T? {
-//    return this.getOrSet(key, region, absoluteExpire, TimePolicy.Absolute supplier.returnType, supplier.supplier)
-//}
-
-
-//inline fun <reified T : Any> ICacheManager.getOrSet(
-//    key: String,
-//    absoluteExpire: Duration,
-//    noinline factory: (key: String) -> T?
-//): T? {
-//    val supplier = typedSupplier { key -> factory(key) }
-//    return this.getOrSet(key, null, absoluteExpire, supplier.returnType, supplier.supplier)
-//}
-
-
-//inline fun <reified T : Any> ICacheManager.getOrSetSliding(
-//    key: String,
-//    region: String?,
-//    slidingExpire: Duration,
-//    noinline factory: (String) -> T?,
-//): T? {
-//    return this.getOrSetSliding(key, region, slidingExpire, T::class.java, factory)
-//}
-//
-//inline fun <reified T : Any> ICacheManager.getOrSetSliding(
-//    key: String,
-//    slidingExpire: Duration,
-//    noinline factory: (String) -> T?,
-//): T? {
-//    return this.getOrSetSliding(key, null, slidingExpire, T::class.java, factory)
-//}

@@ -113,7 +113,7 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         serializer: String?
     ) {
         keyAndValues.forEach { (key, value) ->
-            set(key, value.getData(), value.getKotlinType(), expireMills, timePolicy, region, serializer)
+            set(key, value.getData(), value.getKotlinType(), value.getExpiration()?.toMillis() ?: expireMills, timePolicy, region, serializer)
         }
     }
 

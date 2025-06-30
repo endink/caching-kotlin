@@ -344,10 +344,11 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             val keys = entries.map { it.key }.toTypedArray()
 
             val values = entries.flatMap { (_, value) ->
+                val timeout = value.getExpiration()?.toMillis() ?: timeoutMills
                 listOf(
                     (if (!useSlidingExpiration && timeoutMills != null) creationTime + timeoutMills else NOT_PRESENT).toString().toRedisValue(),
                     (if (useSlidingExpiration && timeoutMills != null) timeoutMills else NOT_PRESENT).toString().toRedisValue(),
-                    (if (timeoutMills != null) timeoutMills / 1000 else NOT_PRESENT).toString().toRedisValue(),
+                    (if (timeout != null) timeout / 1000 else NOT_PRESENT).toString().toRedisValue(),
                     client.serializer.serializeData(value.getData(), value.getKotlinType()).toRedisValue(),
                     client.serializer.name.toRedisValue()
                 )

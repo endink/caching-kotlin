@@ -1,5 +1,6 @@
 package com.labijie.caching
 
+import java.time.Duration
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -14,26 +15,29 @@ interface ICacheItem {
 
     fun getData(): Any
 
+    fun getExpiration(): Duration?
+
     companion object {
-        fun of(data: Any, type: KType? = null): ICacheItem {
-            return KotlinCacheItem(data, type)
+        fun of(data: Any,  type: KType?, expiration: Duration? = null): ICacheItem {
+            return KotlinCacheItem(data,  expiration, type)
         }
 
-        inline fun <reified T: Any> of(data: T): ICacheItem {
-            return KotlinCacheItem(data, typeOf<T>())
+        inline fun <reified T: Any> of(data: T, expiration: Duration? = null): ICacheItem {
+            return KotlinCacheItem(data, expiration,typeOf<T>())
         }
     }
 
-    data class KotlinCacheItem(
-        val cacheData: Any,
-        val type: KType?,
-    ) : ICacheItem {
+    data class KotlinCacheItem(private val cacheData: Any, private val expiration: Duration?, private val type: KType?) : ICacheItem {
         override fun getKotlinType(): KType? {
             return type
         }
 
         override fun getData(): Any {
             return cacheData
+        }
+
+        override fun getExpiration(): Duration? {
+            return expiration
         }
     }
 }

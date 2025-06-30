@@ -9,6 +9,7 @@ import kotlin.reflect.jvm.javaType
  * @author Anders Xiao
  * @date 2019-03-20
  */
+@JvmDefaultWithCompatibility
 interface ICacheDataSerializer {
 
     val name:String
