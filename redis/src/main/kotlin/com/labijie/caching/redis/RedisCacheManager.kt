@@ -8,6 +8,8 @@ import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.codec.KeyValueCodec
 import com.labijie.caching.redis.codec.RedisValue
 import com.labijie.caching.redis.configuration.RedisCacheConfig
+import com.labijie.caching.redis.configuration.RedisCacheConfig.Companion.getRegionOptions
+import com.labijie.caching.redis.configuration.RedisCacheConfig.Companion.getSerializer
 import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
 import io.lettuce.core.*
 import io.lettuce.core.api.StatefulRedisConnection
@@ -119,36 +121,24 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
             return RedisValue(this)
         }
 
-        fun Any.toRedisBytes(): ByteArray = when (this) {
-            is String -> this.toByteArray(Charsets.UTF_8)
-            is ByteArray -> this
-            else -> this.toString().toByteArray(Charsets.UTF_8) // ← ⚠️ 对 binary 是错的
-        }
+//        fun Any.toRedisBytes(): ByteArray = when (this) {
+//            is String -> this.toByteArray(Charsets.UTF_8)
+//            is ByteArray -> this
+//            else -> this.toString().toByteArray(Charsets.UTF_8) // ← ⚠️ 对 binary 是错的
+//        }
     }
 
     private val clients = ConcurrentHashMap<String, RedisClientInternal>()
 
     fun getClient(region: String?, serializerName: String?): RedisClientInternal {
 
-        if (region == NULL_REGION_NAME) {
-            throw RedisCacheException("Cache region name can not be '--'.")
-        }
-        if (redisConfig.regions.isEmpty()) {
-            throw RedisCacheException("At least one redis cache region to be configured")
-        }
-        val name = if (region.isNullOrBlank()) redisConfig.defaultRegion.trim() else region.trim()
-        val config = if (name.isBlank()) {
-            redisConfig.regions.values.first()
-        } else {
-            redisConfig.regions.getOrDefault(name, null)
-                ?: throw RedisCacheException("Cant found redis cache region '$name' that be configured")
-        }
-        val r = name.ifBlank { NULL_REGION_NAME }
-        val serializer = if(serializerName.isNullOrBlank()) config.serializer.ifBlank { redisConfig.defaultSerializer }.ifBlank { JacksonCacheDataSerializer.NAME } else serializerName
+        val (name, options) = redisConfig.getRegionOptions(region)
+
+        val serializer = (serializerName.orEmpty()).ifBlank {   redisConfig.getSerializer(region) }
 
         var client: RedisClientInternal? = null
-        val c = this.clients.getOrPut(r) {
-            val (cli, conn) = createClientAndConnection(config.url)
+        val c = this.clients.getOrPut(name) {
+            val (cli, conn) = createClientAndConnection(options.url)
 
             val n = if (region.isNullOrBlank()) "" else region
             val newClient = RedisClientInternal(
