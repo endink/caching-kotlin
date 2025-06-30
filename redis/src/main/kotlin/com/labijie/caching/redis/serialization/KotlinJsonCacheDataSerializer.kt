@@ -3,8 +3,9 @@ package com.labijie.caching.redis.serialization
 import com.labijie.caching.CacheSerializationUnsupportedException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import com.labijie.caching.redis.customization.IKotlinJsonSerializationCustomizer
+import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import java.lang.reflect.Type
 import kotlin.reflect.KType
@@ -14,7 +15,7 @@ import kotlin.reflect.KType
  * @author Anders Xiao
  * @date 2025/6/24
  */
-class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val customizers: Iterable<IKotlinJsonSerializationCustomizer> = emptyList()) : ICacheDataSerializer {
+class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomizer> = emptyList()) : ICacheDataSerializer {
     companion object {
         const val NAME = "kotlin-json"
     }
@@ -28,8 +29,12 @@ class KotlinJsonCacheDataSerializer @JvmOverloads constructor(private val custom
 
     private val json by lazy {
         Json {
-            customizers.forEach {
-                it.customize(this)
+            if(customizers.any()) {
+                this.serializersModule = SerializersModule {
+                    customizers.forEach {
+                        it.customize(this)
+                    }
+                }
             }
         }
     }

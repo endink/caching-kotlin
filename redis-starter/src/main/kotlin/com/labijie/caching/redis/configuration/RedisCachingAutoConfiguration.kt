@@ -5,18 +5,12 @@ import com.fasterxml.jackson.dataformat.smile.databind.SmileMapper
 import com.labijie.caching.ICacheManager
 import com.labijie.caching.ScopedCacheManager
 import com.labijie.caching.configuration.CachingAutoConfiguration
+import com.labijie.caching.kryo.IKryoSerializer
 import com.labijie.caching.redis.CacheDataSerializerRegistry
 import com.labijie.caching.redis.ICacheDataSerializer
 import com.labijie.caching.redis.RedisCacheManager
-import com.labijie.caching.redis.serialization.JacksonCacheDataSerializer
-import com.labijie.caching.redis.serialization.JsonSmileDataSerializer
-import com.labijie.caching.redis.serialization.KryoCacheDataSerializer
-import com.labijie.caching.redis.serialization.KryoOptions
-import com.labijie.caching.kryo.IKryoSerializer
-import com.labijie.caching.redis.customization.IKotlinJsonSerializationCustomizer
-import com.labijie.caching.redis.customization.IKotlinProtobufSerializationCustomizer
-import com.labijie.caching.redis.serialization.KotlinJsonCacheDataSerializer
-import com.labijie.caching.redis.serialization.KotlinProtobufCacheDataSerializer
+import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
+import com.labijie.caching.redis.serialization.*
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
@@ -52,7 +46,7 @@ class RedisCachingAutoConfiguration {
     protected class KotlinJsonCacheDataSerializerAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-        fun kotlinJsonCacheDataSerializer(customizers: ObjectProvider<IKotlinJsonSerializationCustomizer>): KotlinJsonCacheDataSerializer {
+        fun kotlinJsonCacheDataSerializer(customizers: ObjectProvider<IKotlinCacheDataSerializerCustomizer>): KotlinJsonCacheDataSerializer {
             return KotlinJsonCacheDataSerializer(customizers.orderedStream().toList())
         }
     }
@@ -62,7 +56,7 @@ class RedisCachingAutoConfiguration {
     protected class KotlinProtobufCacheDataSerializerAutoConfiguration {
         @Bean
         @ConditionalOnMissingBean(JacksonCacheDataSerializer::class)
-        fun kotlinProtobufCacheDataSerializer(customizers: ObjectProvider<IKotlinProtobufSerializationCustomizer>): KotlinProtobufCacheDataSerializer {
+        fun kotlinProtobufCacheDataSerializer(customizers: ObjectProvider<IKotlinCacheDataSerializerCustomizer>): KotlinProtobufCacheDataSerializer {
             return KotlinProtobufCacheDataSerializer(customizers)
         }
     }

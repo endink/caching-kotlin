@@ -3,8 +3,9 @@ package com.labijie.caching.redis.serialization
 import com.labijie.caching.CacheSerializationUnsupportedException
 import com.labijie.caching.redis.CacheDataSerializationException
 import com.labijie.caching.redis.ICacheDataSerializer
-import com.labijie.caching.redis.customization.IKotlinProtobufSerializationCustomizer
+import com.labijie.caching.redis.customization.IKotlinCacheDataSerializerCustomizer
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.protobuf.ProtoBuf
 import kotlinx.serialization.serializer
 import java.lang.reflect.Type
@@ -19,7 +20,7 @@ import kotlin.reflect.KType
 @OptIn(ExperimentalSerializationApi::class)
 class KotlinProtobufCacheDataSerializer
 @JvmOverloads
-constructor(private val customizers: Iterable<IKotlinProtobufSerializationCustomizer> = emptyList()) :
+constructor(private val customizers: Iterable<IKotlinCacheDataSerializerCustomizer> = emptyList()) :
     ICacheDataSerializer {
     companion object {
         const val NAME = "kotlin-protobuf"
@@ -30,9 +31,14 @@ constructor(private val customizers: Iterable<IKotlinProtobufSerializationCustom
 
     private val protobuf by lazy {
         ProtoBuf {
-            customizers.forEach {
-                it.customize(this)
+            if (customizers.any()) {
+                this.serializersModule = SerializersModule {
+                    customizers.forEach {
+                        it.customize(this)
+                    }
+                }
             }
+
         }
     }
 
