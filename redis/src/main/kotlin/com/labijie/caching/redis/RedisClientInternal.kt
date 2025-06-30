@@ -11,7 +11,7 @@ import io.lettuce.core.api.StatefulRedisConnection
  */
 class RedisClientInternal(
     val region:String,
-    val connection: StatefulRedisConnection<String, RedisValue>,
+    val connection: StatefulRedisConnection<ByteArray, ByteArray>,
     private val client: RedisClient,
     private val serializerName: String):AutoCloseable {
 
