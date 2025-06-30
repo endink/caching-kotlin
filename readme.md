@@ -253,6 +253,7 @@ For spring project, every serializer include an customize interface for configur
 - IJacksonCacheDataSerializerCustomizer
 - IJsonSmileCacheDataSerializerCustomizer
 - IKryoCacheDataSerializerCustomizer
+- IKotlinCacheDataSerializerCustomizer
 
 Caching-kotlin also provide the ability to create serializer by yourself:
 
