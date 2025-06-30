@@ -4,6 +4,7 @@
  */
 package com.labijie.caching.aot
 
+import com.labijie.caching.ICacheManager
 import com.labijie.caching.annotation.Cache
 import com.labijie.caching.annotation.CacheRemove
 import com.labijie.caching.annotation.SuppressCache
@@ -19,6 +20,8 @@ import org.springframework.aot.hint.TypeReference
 
 class CachingRuntimeHintsRegistrar : RuntimeHintsRegistrar {
     override fun registerHints(hints: RuntimeHints, classLoader: ClassLoader?) {
+        hints.reflection().registerType(ICacheManager::class.java)
+
         hints.reflection().registerTypes(
             listOf(
                 TypeReference.of(Cache::class.java),
