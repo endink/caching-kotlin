@@ -69,7 +69,7 @@
       "name": "infra.caching.redis.regions.values",
       "providers": [
         {
-          "name": "class-reference",
+          "name": "handle-as",
           "parameters": {
             "target": "com.labijie.caching.redis.configuration.RedisRegionOptions"
           }
