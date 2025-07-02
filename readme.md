@@ -8,6 +8,7 @@ A cache structure that supports expiration on each key.
 ![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)
 ![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/endink/caching-kotlin/build.yml)
 ![Maven Central](https://img.shields.io/maven-central/v/com.labijie/caching-kotlin.svg?color=orange)
+![Static Badge](https://img.shields.io/badge/GraalVM-supported-green?style=flat&logoColor=blue&labelColor=orange)
 
 All of the jar packages has been uploaded to the maven central.
 
