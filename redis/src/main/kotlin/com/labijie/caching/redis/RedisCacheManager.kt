@@ -7,6 +7,7 @@ import com.labijie.caching.ICacheManager
 import com.labijie.caching.TimePolicy
 import com.labijie.caching.redis.codec.KeyValueCodec
 import com.labijie.caching.redis.codec.RedisValue
+import com.labijie.caching.redis.codec.RedisValueCodec
 import com.labijie.caching.redis.configuration.RedisCacheConfig
 import com.labijie.caching.redis.configuration.RedisCacheConfig.Companion.getRegionOptions
 import com.labijie.caching.redis.configuration.RedisCacheConfig.Companion.getSerializer
@@ -16,6 +17,12 @@ import io.lettuce.core.api.StatefulRedisConnection
 import io.lettuce.core.api.sync.RedisCommands
 import io.lettuce.core.cluster.SlotHash
 import io.lettuce.core.cluster.api.StatefulRedisClusterConnection
+import io.lettuce.core.codec.ByteArrayCodec
+import io.lettuce.core.codec.StringCodec
+import io.lettuce.core.dynamic.Commands
+import io.lettuce.core.dynamic.RedisCommandFactory
+import io.lettuce.core.dynamic.batch.BatchExecutor
+import io.lettuce.core.dynamic.batch.BatchSize
 import io.lettuce.core.masterreplica.MasterReplica
 import org.slf4j.LoggerFactory
 import java.lang.reflect.Type
@@ -252,6 +259,87 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         return null
     }
 
+    @BatchSize(100)
+    interface RedisBatchQuery : Commands, BatchExecutor {
+        fun hmget(key: String, vararg fields: String): RedisFuture<List<KeyValue<String, RedisValue>>>
+        fun expire(key: String, seconds: Long): RedisFuture<Boolean>
+    }
+
+    // 创建 BatchQuery 实例
+    private fun createBatchQuery(connect: StatefulRedisConnection<String, RedisValue>): RedisBatchQuery {
+        val factory = RedisCommandFactory(connect, listOf(RedisValueCodec.stringCodec, RedisValueCodec))
+        return factory.getCommands(RedisBatchQuery::class.java)
+    }
+
+    // 批量获取并刷新缓存
+    private fun getAndRefreshBatchOptimized(
+        connection: StatefulRedisConnection<String, RedisValue>,
+        keys: Collection<String>,
+        getData: Boolean
+    ): Map<String, CacheHashData> {
+
+        val filteredKeys = keys.mapNotNull {
+            it.ifBlank { null }
+        }
+        if (filteredKeys.isEmpty()) return emptyMap()
+
+        val batchQuery = createBatchQuery(connection)
+
+        val fields = mutableListOf(
+            ABSOLUTE_EXPIRATION_KEY,
+            SLIDING_EXPIRATION_KEY
+        )
+        if (getData) {
+            fields.add(DATA_KEY)
+            fields.add(SERIALIZER_KEY)
+        }
+
+        val futureMap = mutableMapOf<String, RedisFuture<List<KeyValue<String, RedisValue>>>>()
+
+        // 注册命令
+        for (key in filteredKeys) {
+            val future = batchQuery.hmget(key, *fields.toTypedArray())
+            futureMap[key] = future
+        }
+
+        // 刷新命令
+        batchQuery.flush()
+
+        val resultMap = mutableMapOf<String, CacheHashData>()
+
+        // 处理结果
+        for ((key, future) in futureMap) {
+            val hashResult = future.get()
+            val values = hashResult?.filter { it.hasValue() }
+            if (values.isNullOrEmpty()) {
+                continue
+            }
+            val valueMap = values.associate { it.key to it.value }
+
+            // 刷新过期时间
+            val slidingExp = valueMap.getOrDefault(SLIDING_EXPIRATION_KEY, null)?.readString()?.toLongOrNull()
+            if (slidingExp != null && slidingExp != NOT_PRESENT) {
+                batchQuery.expire(key, slidingExp)
+            }
+
+            // 构建返回对象
+            if (getData && valueMap.size >= 4) {
+                val data = valueMap.getOrDefault(DATA_KEY, null)?.readBytes()
+                if(data != null) {
+                    val serializer = valueMap.getOrDefault(SERIALIZER_KEY, null)?.readString()
+                    resultMap[key] = CacheHashData(data, serializer.orEmpty())
+                }
+            }
+        }
+
+        // 刷新过期命令
+        batchQuery.flush()
+
+        return resultMap
+    }
+
+
+
     private fun refreshExpire(
         connection: StatefulRedisConnection<String, RedisValue>,
         key: String,
@@ -397,6 +485,20 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
         }
     }
 
+    private fun CacheHashData.getData(javaType: Type? = null, kotlinType: KType? = null): Any? {
+        return this.data?.let {
+            cachedData->
+            //考虑数据结构更新后缓存反序列化的问题。
+            if(kotlinType != null) {
+                deserializeData(this.serializer, kotlinType, cachedData)
+            }
+            else if (javaType != null) {
+                deserializeData(this.serializer, javaType, cachedData)
+            } else {
+                throw IllegalArgumentException("Java type and kotlin type should have at least one for cache data deserialization.")
+            }
+        }
+    }
 
     private fun getCore(key: String, region: String?, javaType: Type? = null, kotlinType: KType? = null): Any? {
         this.validateKey(key)
@@ -407,15 +509,7 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
 
                 //考虑数据结构更新后缓存反序列化的问题。
                 return try {
-                    if(kotlinType != null) {
-                        this.deserializeData(cacheHashData.serializer, kotlinType, cacheHashData.data!!)
-                    }
-                    else if (javaType != null) {
-                        this.deserializeData(cacheHashData.serializer, javaType, cacheHashData.data!!)
-                    } else {
-                        throw IllegalArgumentException("Java type and kotlin type should have at least one for cache data deserialization.")
-                    }
-
+                    cacheHashData.getData(javaType, kotlinType)
                 } catch (ex: Throwable) {
                     logger.error("The specified type '${kotlinType?.classifier?.javaClass ?: javaType}' could not be deserialize (${cacheHashData.serializer}) from cached data, and the cache with key '$key' has been removed ( region: $region ).")
 
@@ -551,6 +645,47 @@ open class RedisCacheManager(private val redisConfig: RedisCacheConfig) : ICache
     override fun clear() {
         this.clients.keys.asSequence().forEach {
             this.clearRegion(if (it == NULL_REGION_NAME) "" else it)
+        }
+    }
+
+
+    override fun getMulti(keys: Collection<String>, valueType: KType, region: String?): Map<String, Any> {
+        return try {
+            val client = this.getClient(region, null)
+            val connection = client.connection
+
+            val list = getAndRefreshBatchOptimized(connection, keys, true)
+
+            list.mapNotNull { kv ->
+                val data = try {
+                    kv.value.getData(null, kotlinType = valueType)
+                } catch (e: Throwable) {
+                    null
+                }
+                data?.let { kv.key to data }
+            }.toMap()
+        } catch (ex: RedisException) {
+            throw ex.wrap("Batch get cache data fault (region '$region').")
+        }
+    }
+
+    override fun getMulti(keys: Collection<String>, valueType: Type, region: String?): Map<String, Any> {
+        return try {
+            val client = this.getClient(region, null)
+            val connection = client.connection
+
+            val list = getAndRefreshBatchOptimized(connection, keys, true)
+
+            list.mapNotNull { kv ->
+                val data = try {
+                    kv.value.getData(valueType, kotlinType = null)
+                } catch (e: Throwable) {
+                    null
+                }
+                data?.let { kv.key to data }
+            }.toMap()
+        } catch (ex: RedisException) {
+            throw ex.wrap("Batch get cache data fault (region '$region').")
         }
     }
 }

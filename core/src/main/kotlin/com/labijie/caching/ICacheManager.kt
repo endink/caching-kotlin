@@ -115,4 +115,8 @@ interface ICacheManager {
      */
     @Throws(CacheException::class)
     fun get(key: String, valueType: KType, region: String? = null): Any?
+
+    fun getMulti(keys: Collection<String>, valueType: Type, region: String? = null): Map<String, Any>
+
+    fun getMulti(keys: Collection<String>, valueType: KType, region: String? = null): Map<String, Any>
 }

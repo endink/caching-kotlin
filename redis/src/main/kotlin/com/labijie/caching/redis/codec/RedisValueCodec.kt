@@ -13,11 +13,9 @@ import java.nio.ByteBuffer
  * @Date: 2021/12/10
  * @Description:
  */
-class RedisValueCodec : RedisCodec<RedisValue, RedisValue>, ToByteBufEncoder<RedisValue, RedisValue>  {
-    companion object {
-        val byteArrayCodec = ByteArrayCodec()
-        val stringCodec = StringCodec(Charsets.UTF_8)
-    }
+object RedisValueCodec : RedisCodec<RedisValue, RedisValue>, ToByteBufEncoder<RedisValue, RedisValue>  {
+    val byteArrayCodec = ByteArrayCodec()
+    val stringCodec = StringCodec(Charsets.UTF_8)
 
 
     override fun decodeKey(bytes: ByteBuffer?): RedisValue {

@@ -167,6 +167,24 @@ class MemoryCacheManager(options: MemoryCacheOptions? = null) : ICacheManager {
         }
     }
 
+    override fun getMulti(keys: Collection<String>, valueType: KType, region: String?): Map<String, Any> {
+        return keys.mapNotNull {
+            k->
+               getCore(k, region)?.let {
+                k to it
+            }
+        }.toMap()
+    }
+
+    override fun getMulti(keys: Collection<String>, valueType: Type, region: String?): Map<String, Any> {
+        return keys.mapNotNull {
+                k->
+            getCore(k, region)?.let {
+                k to it
+            }
+        }.toMap()
+    }
+
     companion object {
 
         const val DEFAULT_REGION_NAME = "__default"
